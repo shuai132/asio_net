@@ -17,6 +17,9 @@ class tcp_client : public tcp_channel {
     do_connect(resolver.resolve(ip, port));
   }
 
+ public:
+  std::function<void()> onOpen;
+
  private:
   void do_connect(const tcp::resolver::results_type& endpoints) {
     asio::async_connect(socket_, endpoints,

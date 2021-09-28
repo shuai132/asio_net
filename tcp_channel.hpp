@@ -25,7 +25,6 @@ class tcp_channel {
   tcp::endpoint remote_endpoint() { return socket_.remote_endpoint(); }
 
  public:
-  std::function<void()> onOpen;
   std::function<void()> onClose;
   std::function<void(std::string)> onData;
 
