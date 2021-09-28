@@ -6,4 +6,5 @@ set(CMAKE_CXX_STANDARD 14)
 add_compile_options(-Wall)
 
 include_directories(. $ENV{ASIO_PATH})
-add_executable(${PROJECT_NAME}_test test/main.cpp)
+add_executable(${PROJECT_NAME}_test_tcp test/tcp.cpp)
+add_executable(${PROJECT_NAME}_test_udp test/udp.cpp)

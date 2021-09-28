@@ -1,0 +1,41 @@
+#pragma once
+
+#include "asio.hpp"
+
+namespace asio_udp {
+
+using asio::ip::udp;
+
+class udp_server {
+ public:
+  udp_server(asio::io_context& io_context, short port,
+             uint16_t max_length = 4096)
+      : socket_(io_context, udp::endpoint(udp::v4(), port)),
+        max_length_(max_length) {
+    data_.resize(max_length);
+    do_receive();
+  }
+
+  std::function<void(uint8_t* data, size_t size, udp::endpoint from)> onData;
+
+ private:
+  void do_receive() {
+    socket_.async_receive_from(
+        asio::buffer((char*)data_.data(), max_length_), from_endpoint_,
+        [this](std::error_code ec, std::size_t bytes_recvd) {
+          if (!ec && bytes_recvd > 0) {
+            if (onData)
+              onData((uint8_t*)data_.data(), bytes_recvd, from_endpoint_);
+            do_receive();
+          }
+        });
+  }
+
+ private:
+  udp::socket socket_;
+  udp::endpoint from_endpoint_;
+  uint16_t max_length_;
+  std::string data_;
+};
+
+}  // namespace asio_udp
