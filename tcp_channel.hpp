@@ -20,6 +20,10 @@ class tcp_channel {
 
   bool is_open() const { return socket_.is_open(); }
 
+  tcp::endpoint local_endpoint() { return socket_.local_endpoint(); }
+
+  tcp::endpoint remote_endpoint() { return socket_.remote_endpoint(); }
+
  public:
   std::function<void()> onOpen;
   std::function<void()> onClose;
