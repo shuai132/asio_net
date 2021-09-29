@@ -21,7 +21,7 @@ class udp_server {
  private:
   void do_receive() {
     socket_.async_receive_from(
-        asio::buffer((char*)data_.data(), max_length_), from_endpoint_,
+        asio::buffer((void*)data_.data(), max_length_), from_endpoint_,
         [this](std::error_code ec, std::size_t bytes_recvd) {
           if (!ec && bytes_recvd > 0) {
             if (onData)

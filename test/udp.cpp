@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
           udp::endpoint(asio::ip::address_v4::from_string("127.0.0.1"), PORT);
       for (uint32_t i = 0; i < test_count_max; ++i) {
         auto data = std::to_string(i);
-        client.do_send((char*)data.c_str(), data.size(), endpoint);
+        client.do_send(data, endpoint);
         usleep(1);
       }
     });
