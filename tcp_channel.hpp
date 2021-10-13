@@ -5,7 +5,7 @@
 #include "asio.hpp"
 #include "tcp_message.hpp"
 
-namespace asio_tcp {
+namespace asio_net {
 
 using asio::ip::tcp;
 
@@ -25,8 +25,8 @@ class tcp_channel {
   tcp::endpoint remote_endpoint() { return socket_.remote_endpoint(); }
 
  public:
-  std::function<void()> onClose;
-  std::function<void(std::string)> onData;
+  std::function<void()> on_close;
+  std::function<void(std::string)> on_data;
 
  protected:
   void do_read_start(std::shared_ptr<tcp_channel> self = nullptr) {
@@ -55,7 +55,7 @@ class tcp_channel {
                        if (!ec) {
                          auto msg = std::move(read_msg_.body);
                          read_msg_ = {};
-                         if (onData) onData(std::move(msg));
+                         if (on_data) on_data(std::move(msg));
                          do_read_header(std::move(self));
                        } else {
                          socket_.close();
@@ -84,7 +84,7 @@ class tcp_channel {
   void do_close() {
     if (!is_open()) return;
     socket_.close();
-    if (onClose) onClose();
+    if (on_close) on_close();
   }
 
  private:

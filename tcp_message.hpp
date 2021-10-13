@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <string>
 
-namespace asio_tcp {
+namespace asio_net {
 
 struct tcp_message {
   tcp_message() = default;

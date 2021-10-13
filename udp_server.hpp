@@ -2,7 +2,7 @@
 
 #include "asio.hpp"
 
-namespace asio_udp {
+namespace asio_net {
 
 using asio::ip::udp;
 
@@ -16,7 +16,7 @@ class udp_server {
     do_receive();
   }
 
-  std::function<void(uint8_t* data, size_t size, udp::endpoint from)> onData;
+  std::function<void(uint8_t* data, size_t size, udp::endpoint from)> on_data;
 
  private:
   void do_receive() {
@@ -24,8 +24,8 @@ class udp_server {
         asio::buffer((void*)data_.data(), max_length_), from_endpoint_,
         [this](std::error_code ec, std::size_t bytes_recvd) {
           if (!ec && bytes_recvd > 0) {
-            if (onData)
-              onData((uint8_t*)data_.data(), bytes_recvd, from_endpoint_);
+            if (on_data)
+              on_data((uint8_t*)data_.data(), bytes_recvd, from_endpoint_);
             do_receive();
           }
         });

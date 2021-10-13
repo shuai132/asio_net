@@ -2,7 +2,7 @@
 
 #include "tcp_channel.hpp"
 
-namespace asio_tcp {
+namespace asio_net {
 
 class tcp_client : public tcp_channel {
  public:
@@ -18,14 +18,14 @@ class tcp_client : public tcp_channel {
   }
 
  public:
-  std::function<void()> onOpen;
+  std::function<void()> on_open;
 
  private:
   void do_connect(const tcp::resolver::results_type& endpoints) {
     asio::async_connect(socket_, endpoints,
                         [this](std::error_code ec, const tcp::endpoint&) {
                           if (!ec) {
-                            if (onOpen) onOpen();
+                            if (on_open) on_open();
                             do_read_start();
                           }
                         });

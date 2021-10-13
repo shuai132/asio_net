@@ -7,7 +7,7 @@
 #include "tcp_client.hpp"
 #include "tcp_server.hpp"
 
-using namespace asio_tcp;
+using namespace asio_net;
 
 const uint16_t PORT = 6666;
 
@@ -23,16 +23,16 @@ int main(int argc, char** argv) {
   std::thread([] {
     asio::io_context context;
     tcp_server server(context, PORT);
-    server.onNewSession = [](const std::weak_ptr<tcp_session>& ws) {
-      printf("onNewSession:\n");
+    server.on_session = [](const std::weak_ptr<tcp_session>& ws) {
+      printf("on_session:\n");
       auto session = ws.lock();
-      session->onClose = [] {
-        printf("Session onClose:\n");
+      session->on_close = [] {
+        printf("session on_close:\n");
         pass_flag_session_close = true;
       };
-      session->onData = [ws](std::string data) {
+      session->on_data = [ws](std::string data) {
         ASSERT(!ws.expired());
-        printf("Session onData: %s\n", data.c_str());
+        printf("session on_data: %s\n", data.c_str());
         ws.lock()->send(std::move(data));
       };
     };
@@ -41,23 +41,23 @@ int main(int argc, char** argv) {
   std::thread([] {
     asio::io_context context;
     tcp_client client(context);
-    client.onOpen = [&] {
-      printf("client onOpen:\n");
+    client.on_open = [&] {
+      printf("client on_open:\n");
       for (uint32_t i = 0; i < test_count_max; ++i) {
         client.send(std::to_string(i));
       }
     };
-    client.onData = [&](const std::string& data) {
-      printf("client onData: %s\n", data.c_str());
+    client.on_data = [&](const std::string& data) {
+      printf("client on_data: %s\n", data.c_str());
       ASSERT(std::to_string(test_count_expect++) == data);
       if (test_count_expect == test_count_max - 1) {
         client.close();
       }
     };
-    client.onClose = [&] {
+    client.on_close = [&] {
       pass_flag_client_close = true;
       ASSERT(test_count_expect == test_count_max - 1);
-      printf("client onClose:\n");
+      printf("client on_close:\n");
       context.stop();
     };
     client.open("localhost", std::to_string(PORT));

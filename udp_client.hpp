@@ -2,7 +2,7 @@
 
 #include "asio.hpp"
 
-namespace asio_udp {
+namespace asio_net {
 
 using asio::ip::udp;
 
@@ -11,7 +11,7 @@ class udp_client {
   explicit udp_client(asio::io_context& io_context)
       : socket_(io_context, udp::endpoint(udp::v4(), 0)) {}
 
-  void do_send(std::string data, const udp::endpoint& endpoint) {
+  void send_to(std::string data, const udp::endpoint& endpoint) {
     auto keeper = std::make_unique<std::string>(std::move(data));
     socket_.async_send_to(
         asio::buffer(keeper->data(), keeper->length()), endpoint,
@@ -19,8 +19,8 @@ class udp_client {
                                      std::size_t /*bytes_sent*/) {});
   }
 
-  void do_send(void* data, size_t size, const udp::endpoint& endpoint) {
-    do_send(std::string((char*)data, size), endpoint);
+  void send_to(void* data, size_t size, const udp::endpoint& endpoint) {
+    send_to(std::string((char*)data, size), endpoint);
   }
 
  private:

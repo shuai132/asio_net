@@ -3,7 +3,7 @@
 #include "asio.hpp"
 #include "tcp_channel.hpp"
 
-namespace asio_tcp {
+namespace asio_net {
 
 class tcp_session : public tcp_channel,
                     public std::enable_shared_from_this<tcp_session> {
@@ -27,7 +27,7 @@ class tcp_server {
   }
 
  public:
-  std::function<void(std::weak_ptr<tcp_session>)> onNewSession;
+  std::function<void(std::weak_ptr<tcp_session>)> on_session;
 
  private:
   void do_accept() {
@@ -36,7 +36,7 @@ class tcp_server {
         auto session =
             std::make_shared<tcp_session>(std::move(socket), max_body_size_);
         session->start();
-        if (onNewSession) onNewSession(session);
+        if (on_session) on_session(session);
       }
 
       do_accept();
