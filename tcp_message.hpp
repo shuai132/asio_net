@@ -9,14 +9,14 @@ namespace asio_net {
 
 struct tcp_message : private noncopyable {
   tcp_message() = default;
-  explicit tcp_message(std::string msg) : header(msg.length()), body(std::move(msg)) {}
+  explicit tcp_message(std::string msg) : length(msg.length()), body(std::move(msg)) {}
 
   void clear() {
-    header = 0;
+    length = 0;
     body.clear();
   }
 
-  uint32_t header{};  // body length
+  uint32_t length{};
   std::string body;
 };
 

@@ -45,9 +45,9 @@ class tcp_channel : private noncopyable {
 
  private:
   void do_read_header(std::shared_ptr<tcp_channel> self = nullptr) {
-    asio::async_read(socket_, asio::buffer(&read_msg_.header, sizeof(read_msg_.header)),
+    asio::async_read(socket_, asio::buffer(&read_msg_.length, sizeof(read_msg_.length)),
                      [this, self = std::move(self)](std::error_code ec, std::size_t /*length*/) mutable {
-                       if (!ec && read_msg_.header <= max_body_size_) {
+                       if (!ec && read_msg_.length <= max_body_size_) {
                          do_read_body(std::move(self));
                        } else {
                          do_close();
@@ -56,7 +56,7 @@ class tcp_channel : private noncopyable {
   }
 
   void do_read_body(std::shared_ptr<tcp_channel> self = nullptr) {
-    read_msg_.body.resize(read_msg_.header);
+    read_msg_.body.resize(read_msg_.length);
     asio::async_read(socket_, asio::buffer(read_msg_.body), [this, self = std::move(self)](std::error_code ec, std::size_t /*length*/) mutable {
       if (!ec) {
         auto msg = std::move(read_msg_.body);
@@ -71,7 +71,7 @@ class tcp_channel : private noncopyable {
 
   void do_write(std::string msg) {
     auto keeper = std::make_unique<tcp_message>(std::move(msg));
-    asio::async_write(socket_, asio::buffer(&keeper->header, sizeof(keeper->header)), [this](std::error_code ec, std::size_t /*length*/) {
+    asio::async_write(socket_, asio::buffer(&keeper->length, sizeof(keeper->length)), [this](std::error_code ec, std::size_t /*length*/) {
       if (ec) {
         do_close();
       }
