@@ -8,10 +8,8 @@ using asio::ip::udp;
 
 class udp_server {
  public:
-  udp_server(asio::io_context& io_context, short port,
-             uint16_t max_length = 4096)
-      : socket_(io_context, udp::endpoint(udp::v4(), port)),
-        max_length_(max_length) {
+  udp_server(asio::io_context& io_context, short port, uint16_t max_length = 4096)
+      : socket_(io_context, udp::endpoint(udp::v4(), port)), max_length_(max_length) {
     data_.resize(max_length);
     do_receive();
   }
@@ -20,15 +18,12 @@ class udp_server {
 
  private:
   void do_receive() {
-    socket_.async_receive_from(
-        asio::buffer((void*)data_.data(), max_length_), from_endpoint_,
-        [this](std::error_code ec, std::size_t bytes_recvd) {
-          if (!ec && bytes_recvd > 0) {
-            if (on_data)
-              on_data((uint8_t*)data_.data(), bytes_recvd, from_endpoint_);
-            do_receive();
-          }
-        });
+    socket_.async_receive_from(asio::buffer((void*)data_.data(), max_length_), from_endpoint_, [this](std::error_code ec, std::size_t bytes_recvd) {
+      if (!ec && bytes_recvd > 0) {
+        if (on_data) on_data((uint8_t*)data_.data(), bytes_recvd, from_endpoint_);
+        do_receive();
+      }
+    });
   }
 
  private:
@@ -38,4 +33,4 @@ class udp_server {
   std::string data_;
 };
 
-}  // namespace asio_udp
+}  // namespace asio_net

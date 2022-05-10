@@ -30,8 +30,7 @@ int main(int argc, char** argv) {
     asio::io_context context;
     udp_client client(context);
     context.post([&client] {
-      auto endpoint =
-          udp::endpoint(asio::ip::address_v4::from_string("127.0.0.1"), PORT);
+      auto endpoint = udp::endpoint(asio::ip::address_v4::from_string("127.0.0.1"), PORT);
       for (uint32_t i = 0; i < test_count_max; ++i) {
         auto data = std::to_string(i);
         client.send_to(data, endpoint);
@@ -41,7 +40,6 @@ int main(int argc, char** argv) {
     context.run();
   }).join();
   sleep(1);
-  printf("lost: %f%%\n",
-         100 * (double)(test_count_max - test_count_received) / test_count_max);
+  printf("lost: %f%%\n", 100 * (double)(test_count_max - test_count_received) / test_count_max);
   return EXIT_SUCCESS;
 }

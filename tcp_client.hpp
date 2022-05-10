@@ -6,11 +6,8 @@ namespace asio_net {
 
 class tcp_client : public tcp_channel {
  public:
-  explicit tcp_client(asio::io_context& io_context,
-                      uint32_t max_body_size = 4096)
-      : tcp_channel(socket_, max_body_size_),
-        socket_(io_context),
-        max_body_size_(max_body_size) {}
+  explicit tcp_client(asio::io_context& io_context, uint32_t max_body_size = 4096)
+      : tcp_channel(socket_, max_body_size_), socket_(io_context), max_body_size_(max_body_size) {}
 
   void open(const std::string& ip, const std::string& port) {
     tcp::resolver resolver(socket_.get_executor());
@@ -22,13 +19,12 @@ class tcp_client : public tcp_channel {
 
  private:
   void do_connect(const tcp::resolver::results_type& endpoints) {
-    asio::async_connect(socket_, endpoints,
-                        [this](std::error_code ec, const tcp::endpoint&) {
-                          if (!ec) {
-                            if (on_open) on_open();
-                            do_read_start();
-                          }
-                        });
+    asio::async_connect(socket_, endpoints, [this](std::error_code ec, const tcp::endpoint&) {
+      if (!ec) {
+        if (on_open) on_open();
+        do_read_start();
+      }
+    });
   }
 
  private:
@@ -36,4 +32,4 @@ class tcp_client : public tcp_channel {
   uint32_t max_body_size_;
 };
 
-}  // namespace asio_tcp
+}  // namespace asio_net
