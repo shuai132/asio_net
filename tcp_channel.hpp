@@ -3,13 +3,14 @@
 #include <utility>
 
 #include "asio.hpp"
+#include "noncopyable.hpp"
 #include "tcp_message.hpp"
 
 namespace asio_net {
 
 using asio::ip::tcp;
 
-class tcp_channel {
+class tcp_channel : private noncopyable {
  public:
   tcp_channel(tcp::socket& socket, const uint32_t& max_body_size) : socket_(socket), max_body_size_(max_body_size) {}
 
@@ -59,7 +60,7 @@ class tcp_channel {
     asio::async_read(socket_, asio::buffer(read_msg_.body), [this, self = std::move(self)](std::error_code ec, std::size_t /*length*/) mutable {
       if (!ec) {
         auto msg = std::move(read_msg_.body);
-        read_msg_ = {};
+        read_msg_.clear();
         if (on_data) on_data(std::move(msg));
         do_read_header(std::move(self));
       } else {

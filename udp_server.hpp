@@ -1,12 +1,13 @@
 #pragma once
 
 #include "asio.hpp"
+#include "noncopyable.hpp"
 
 namespace asio_net {
 
 using asio::ip::udp;
 
-class udp_server {
+class udp_server : private noncopyable {
  public:
   udp_server(asio::io_context& io_context, short port, uint16_t max_length = 4096)
       : socket_(io_context, udp::endpoint(udp::v4(), port)), max_length_(max_length) {
