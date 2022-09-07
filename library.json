@@ -1,0 +1,10 @@
+{
+  "build": {
+    "srcDir": "_",
+    "flags": [
+      "-I .",
+      "-I rpc",
+      "-I rpc/RpcCore"
+    ]
+  }
+}
