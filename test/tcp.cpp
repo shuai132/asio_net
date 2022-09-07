@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
         ws.lock()->send(std::move(data));
       };
     };
-    context.run();
+    server.start(true);
   }).detach();
   std::thread([] {
     asio::io_context context;
