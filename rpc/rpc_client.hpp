@@ -33,11 +33,8 @@ class rpc_client : noncopyable {
     };
 
     client_.on_close = [this] {
-      // here may call from rpc callback(e.g: rsp), need post
-      io_context_.post([this] {
-        client_.on_data = nullptr;  // release rpc reference
-        on_close();
-      });
+      client_.on_data = nullptr;
+      on_close();
     };
   }
 

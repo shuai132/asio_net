@@ -19,7 +19,9 @@ class tcp_channel : private noncopyable {
   }
 
   void close() {
-    do_close();
+    asio::post(socket_.get_executor(), [this] {
+      do_close();
+    });
   }
 
   bool is_open() const {
