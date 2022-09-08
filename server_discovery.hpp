@@ -58,10 +58,10 @@ class receiver {
         if (msgs.size() == 3 && msgs[0] == "discovery") {
           service_found_handle_(std::move(msgs[1]), std::move(msgs[2]));
         }
+        do_receive();
       } else {
         asio_net_LOGE("server_discovery: receive: err: %s", ec.message().c_str());
       }
-      do_receive();
     });
   }
 
@@ -86,10 +86,11 @@ class sender {
  private:
   void do_send() {
     socket_.async_send_to(asio::buffer(message_), endpoint_, [this](std::error_code ec, std::size_t /*length*/) {
-      if (ec) {
+      if (!ec) {
+        do_send_next();
+      } else {
         asio_net_LOGE("server_discovery: sender: err: %s", ec.message().c_str());
       }
-      do_send_next();
     });
   }
 
