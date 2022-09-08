@@ -29,6 +29,8 @@ if (RpcCore_BUILD_TEST)
 
     add_executable(${PROJECT_NAME}_test_tcp test/tcp.cpp)
     add_executable(${PROJECT_NAME}_test_udp test/udp.cpp)
+    add_executable(${PROJECT_NAME}_test_server_discovery test/server_discovery.cpp)
+
     if (asio_net_ENABLE_RPC)
         add_compile_definitions(RpcCore_LOG_SHOW_DEBUG)
         add_compile_definitions(asio_net_LOG_SHOW_DEBUG)
