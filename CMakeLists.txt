@@ -26,6 +26,7 @@ endif ()
 if (RpcCore_BUILD_TEST)
     include_directories($ENV{ASIO_PATH})
     link_libraries(${PROJECT_NAME})
+    link_libraries(pthread)
 
     add_executable(${PROJECT_NAME}_test_tcp test/tcp.cpp)
     add_executable(${PROJECT_NAME}_test_udp test/udp.cpp)
