@@ -28,13 +28,17 @@ class rpc_server : noncopyable {
 
       auto session = ws.lock();
       session->on_close = [rpc_session] {
-        rpc_session->on_close();
+        if (rpc_session->on_close) {
+          rpc_session->on_close();
+        }
       };
       session->on_data = [rpc_session](std::string data) {
         rpc_session->rpc->getConn()->onRecvPackage(std::move(data));
       };
 
-      on_session(rpc_session);
+      if (on_session) {
+        on_session(rpc_session);
+      }
     };
   }
 
