@@ -1,7 +1,7 @@
 #pragma once
 
 #include "RpcCore.hpp"
-#include "noncopyable.hpp"
+#include "detail/noncopyable.hpp"
 #include "rpc_session.hpp"
 #include "tcp_client.hpp"
 

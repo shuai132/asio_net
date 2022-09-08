@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <string>
 
-#include "noncopyable.hpp"
+#include "detail/noncopyable.hpp"
 
 namespace asio_net {
 

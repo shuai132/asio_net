@@ -1,6 +1,6 @@
 #pragma once
 
-#include "noncopyable.hpp"
+#include "detail/noncopyable.hpp"
 #include "tcp_channel.hpp"
 
 namespace asio_net {

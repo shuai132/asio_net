@@ -1,7 +1,7 @@
 #pragma once
 
 #include "asio.hpp"
-#include "noncopyable.hpp"
+#include "detail/noncopyable.hpp"
 
 namespace asio_net {
 

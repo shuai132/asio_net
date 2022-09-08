@@ -3,7 +3,7 @@
 #include <utility>
 
 #include "RpcCore.hpp"
-#include "noncopyable.hpp"
+#include "detail/noncopyable.hpp"
 #include "tcp_server.hpp"
 
 namespace asio_net {

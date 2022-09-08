@@ -3,7 +3,8 @@
 #include <utility>
 
 #include "asio.hpp"
-#include "noncopyable.hpp"
+#include "detail/log.h"
+#include "detail/noncopyable.hpp"
 #include "tcp_message.hpp"
 
 namespace asio_net {
@@ -12,7 +13,13 @@ using asio::ip::tcp;
 
 class tcp_channel : private noncopyable {
  public:
-  tcp_channel(tcp::socket& socket, const uint32_t& max_body_size) : socket_(socket), max_body_size_(max_body_size) {}
+  tcp_channel(tcp::socket& socket, const uint32_t& max_body_size) : socket_(socket), max_body_size_(max_body_size) {
+    asio_net_LOGD("tcp_channel: %p", this);
+  }
+
+  ~tcp_channel() {
+    asio_net_LOGD("~tcp_channel: %p", this);
+  }
 
   void send(std::string msg) {
     do_write(std::move(msg));
