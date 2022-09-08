@@ -4,10 +4,10 @@ project(asio_net CXX)
 
 option(asio_net_ENABLE_RPC "" ON)
 
-option(RpcCore_BUILD_TEST "" OFF)
+option(asio_net_BUILD_TEST "" OFF)
 
 if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-    set(RpcCore_BUILD_TEST ON)
+    set(asio_net_BUILD_TEST ON)
 endif ()
 
 set(CMAKE_CXX_STANDARD 14)
@@ -23,7 +23,7 @@ if (asio_net_ENABLE_RPC)
             )
 endif ()
 
-if (RpcCore_BUILD_TEST)
+if (asio_net_BUILD_TEST)
     include_directories($ENV{ASIO_PATH})
     link_libraries(${PROJECT_NAME})
     link_libraries(pthread)
