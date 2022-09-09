@@ -94,7 +94,11 @@ class tcp_channel : private noncopyable {
 
   void do_close() {
     if (!is_open()) return;
-    socket_.close();
+    try {
+      socket_.close();
+    } catch (std::exception& e) {
+      LOGW("do_close: %s", e.what());
+    }
     if (on_close) on_close();
   }
 
