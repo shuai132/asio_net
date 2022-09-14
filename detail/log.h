@@ -91,7 +91,7 @@
 
 #if __ANDROID__
 #include <android/log.h>
-#define asio_net_LOG_PRINTF(...)         __android_log_print(ANDROID_asio_net_LOG_DEBUG, "asio_net_LOG", __VA_ARGS__)
+#define asio_net_LOG_PRINTF(...)         __android_log_print(ANDROID_LOG_DEBUG, "asio_net_LOG", __VA_ARGS__)
 #else
 #define asio_net_LOG_PRINTF(...)         printf(__VA_ARGS__)
 #endif
