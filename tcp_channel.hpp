@@ -97,7 +97,7 @@ class tcp_channel : private noncopyable {
     try {
       socket_.close();
     } catch (std::exception& e) {
-      LOGW("do_close: %s", e.what());
+      asio_net_LOGW("do_close: %s", e.what());
     }
     if (on_close) on_close();
   }
