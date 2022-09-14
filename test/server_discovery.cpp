@@ -32,6 +32,6 @@ int main(int argc, char** argv) {
     context.run();
   }).detach();
 
-  sleep(3);
+  getchar();
   return 0;
 }
