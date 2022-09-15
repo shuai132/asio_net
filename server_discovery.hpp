@@ -3,6 +3,7 @@
 #include <array>
 #include <functional>
 #include <string>
+#include <utility>
 
 #include "asio.hpp"
 #include "detail/log.h"
@@ -23,21 +24,32 @@ class receiver {
   using service_found_handle_t = std::function<void(std::string name, std::string message)>;
 
  public:
-  receiver(asio::io_context& io_context, service_found_handle_t handle, const char* addr = addr_default, short port = port_default)
+  receiver(asio::io_context& io_context, service_found_handle_t handle, const std::string& addr = addr_default, short port = port_default)
       : socket_(io_context), service_found_handle_(std::move(handle)) {
     // create the socket so that multiple may be bound to the same address.
     asio::ip::udp::endpoint listen_endpoint(asio::ip::make_address("0.0.0.0"), port);
     socket_.open(listen_endpoint.protocol());
-    socket_.set_option(asio::ip::udp::socket::reuse_address(true));
     socket_.bind(listen_endpoint);
-
-    // join the multicast group.
-    socket_.set_option(asio::ip::multicast::join_group(asio::ip::make_address(addr)));
-
-    do_receive();
+    socket_.set_option(asio::ip::udp::socket::reuse_address(true));
+    try_init(addr);
   }
 
  private:
+  void try_init(const std::string& addr) {
+    try {
+      socket_.set_option(asio::ip::multicast::join_group(asio::ip::make_address(addr)));
+      do_receive();
+    } catch (const std::exception& e) {
+      asio_net_LOGE("receive: init err: %s", e.what());
+      auto timer = std::make_shared<asio::steady_timer>(socket_.get_executor());
+      timer->expires_after(std::chrono::seconds(1));
+      timer->async_wait([=](std::error_code e) mutable {
+        try_init(addr);
+        timer = nullptr;
+      });
+    }
+  }
+
   void do_receive() {
     socket_.async_receive_from(asio::buffer(data_), sender_endpoint_, [this](std::error_code ec, std::size_t length) {
       if (!ec) {
