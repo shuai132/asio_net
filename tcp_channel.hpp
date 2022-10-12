@@ -85,7 +85,8 @@ class tcp_channel : private noncopyable {
         do_close();
       }
     });
-    asio::async_write(socket_, asio::buffer(keeper->body), [this, keeper = std::move(keeper)](std::error_code ec, std::size_t /*length*/) {
+    auto& body = keeper->body;
+    asio::async_write(socket_, asio::buffer(body), [this, keeper = std::move(keeper)](std::error_code ec, std::size_t /*length*/) {
       if (ec) {
         do_close();
       }

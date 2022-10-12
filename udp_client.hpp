@@ -13,7 +13,9 @@ class udp_client : private noncopyable {
 
   void send_to(std::string data, const udp::endpoint& endpoint) {
     auto keeper = std::make_unique<std::string>(std::move(data));
-    socket_.async_send_to(asio::buffer(keeper->data(), keeper->length()), endpoint,
+    auto k_data = keeper->data();
+    auto k_size = keeper->size();
+    socket_.async_send_to(asio::buffer(k_data, k_size), endpoint,
                           [keeper = std::move(keeper)](std::error_code /*ec*/, std::size_t /*bytes_sent*/) {});
   }
 
