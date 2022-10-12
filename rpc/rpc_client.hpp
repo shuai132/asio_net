@@ -36,6 +36,10 @@ class rpc_client : noncopyable {
       client_.on_data = nullptr;
       on_close();
     };
+
+    client_.on_open_failed = [this] {
+      on_open_failed();
+    };
   }
 
   void open(const std::string& ip, const std::string& port) {
@@ -49,6 +53,7 @@ class rpc_client : noncopyable {
  public:
   std::function<void(std::shared_ptr<RpcCore::Rpc>)> on_open;
   std::function<void()> on_close;
+  std::function<void()> on_open_failed;
 
  private:
   asio::io_context& io_context_;

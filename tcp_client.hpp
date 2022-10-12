@@ -17,6 +17,7 @@ class tcp_client : public tcp_channel {
 
  public:
   std::function<void()> on_open;
+  std::function<void()> on_open_failed;
 
  private:
   void do_connect(const tcp::resolver::results_type& endpoints) {
@@ -24,6 +25,8 @@ class tcp_client : public tcp_channel {
       if (!ec) {
         if (on_open) on_open();
         do_read_start();
+      } else {
+        if (on_open_failed) on_open_failed();
       }
     });
   }
