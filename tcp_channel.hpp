@@ -80,13 +80,11 @@ class tcp_channel : private noncopyable {
 
   void do_write(std::string msg) {
     auto keeper = std::make_unique<tcp_message>(std::move(msg));
-    asio::async_write(socket_, asio::buffer(&keeper->length, sizeof(keeper->length)), [this](std::error_code ec, std::size_t /*length*/) {
-      if (ec) {
-        do_close();
-      }
-    });
-    auto& body = keeper->body;
-    asio::async_write(socket_, asio::buffer(body), [this, keeper = std::move(keeper)](std::error_code ec, std::size_t /*length*/) {
+    auto buffer = {
+        asio::buffer(&keeper->length, sizeof(keeper->length)),
+        asio::buffer(keeper->body),
+    };
+    asio::async_write(socket_, buffer, [this, keeper = std::move(keeper)](std::error_code ec, std::size_t /*length*/) {
       if (ec) {
         do_close();
       }
