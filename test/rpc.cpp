@@ -66,7 +66,9 @@ int main(int argc, char** argv) {
 
   ASSERT(pass_flag_rpc_pass);
   ASSERT(pass_flag_client_close);
-  ASSERT(pass_flag_session_close);
+  while (!pass_flag_session_close) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
 
   return EXIT_SUCCESS;
 }
