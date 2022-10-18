@@ -15,7 +15,7 @@ int main(int argc, char** argv) {
     session->on_close = [rs] {
       printf("session on_close: %p\n", rs.lock().get());
     };
-    session->rpc->subscribe<RpcCore::String, RpcCore::String>("cmd", [](const RpcCore::String& data) {
+    session->rpc->subscribe("cmd", [](const RpcCore::String& data) -> RpcCore::String {
       printf("session on cmd: %s\n", data.c_str());
       return "world";
     });

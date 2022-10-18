@@ -28,7 +28,7 @@ int main(int argc, char** argv) {
         printf("session on_close:\n");
         pass_flag_session_close = true;
       };
-      session->rpc->subscribe<RpcCore::String, RpcCore::String>("cmd", [](const RpcCore::String& data) {
+      session->rpc->subscribe("cmd", [](const RpcCore::String& data) -> RpcCore::String {
         printf("session on cmd: %s\n", data.c_str());
         ASSERT(data == "hello");
         return "world";
@@ -43,10 +43,9 @@ int main(int argc, char** argv) {
     rpc_client client(context);
     client.on_open = [&](const std::shared_ptr<RpcCore::Rpc>& rpc) {
       printf("client on_open:\n");
-      rpc->createRequest()
-          ->cmd("cmd")
+      rpc->cmd("cmd")
           ->msg(RpcCore::String("hello"))
-          ->rsp<RpcCore::String>([&](const RpcCore::String& data) {
+          ->rsp([&](const RpcCore::String& data) {
             printf("cmd rsp: %s\n", data.c_str());
             if (data == "world") {
               pass_flag_rpc_pass = true;

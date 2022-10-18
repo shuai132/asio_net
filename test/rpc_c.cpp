@@ -11,10 +11,9 @@ int main(int argc, char** argv) {
   rpc_client client(context);
   client.on_open = [&](const std::shared_ptr<RpcCore::Rpc>& rpc) {
     printf("client on_open:\n");
-    rpc->createRequest()
-        ->cmd("cmd")
+    rpc->cmd("cmd")
         ->msg(RpcCore::String("hello"))
-        ->rsp<RpcCore::String>([&](const RpcCore::String& data) {
+        ->rsp([&](const RpcCore::String& data) {
           printf("cmd rsp: %s\n", data.c_str());
         })
         ->call();
