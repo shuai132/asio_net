@@ -56,9 +56,13 @@ class tcp_channel : private noncopyable {
   void do_read_header(std::shared_ptr<tcp_channel> self = nullptr) {
     asio::async_read(socket_, asio::buffer(&read_msg_.length, sizeof(read_msg_.length)),
                      [this, self = std::move(self)](std::error_code ec, std::size_t /*length*/) mutable {
-                       if (!ec && read_msg_.length <= max_body_size_) {
+                       if (ec) {
+                         do_close();
+                       }
+                       if (read_msg_.length <= max_body_size_) {
                          do_read_body(std::move(self));
                        } else {
+                         asio_net_LOGE("read: body size=%u > max_body_size=%u", read_msg_.length, max_body_size_);
                          do_close();
                        }
                      });
@@ -80,6 +84,11 @@ class tcp_channel : private noncopyable {
 
   void do_write(std::string msg) {
     auto keeper = std::make_unique<tcp_message>(std::move(msg));
+    if (keeper->length > max_body_size_) {
+      asio_net_LOGE("write: body size=%u > max_body_size=%u", keeper->length, max_body_size_);
+      do_close();
+    }
+
     auto buffer = {
         asio::buffer(&keeper->length, sizeof(keeper->length)),
         asio::buffer(keeper->body),
