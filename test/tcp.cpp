@@ -32,7 +32,9 @@ int main(int argc, char** argv) {
       };
       session->on_data = [ws](std::string data) {
         ASSERT(!ws.expired());
+#ifndef asio_net_DISABLE_ON_DATA_PRINT
         printf("session on_data: %s\n", data.c_str());
+#endif
         ws.lock()->send(std::move(data));
       };
     };
@@ -48,7 +50,9 @@ int main(int argc, char** argv) {
       }
     };
     client.on_data = [&](const std::string& data) {
+#ifndef asio_net_DISABLE_ON_DATA_PRINT
       printf("client on_data: %s\n", data.c_str());
+#endif
       ASSERT(std::to_string(test_count_expect++) == data);
       if (test_count_expect == test_count_max - 1) {
         client.close();

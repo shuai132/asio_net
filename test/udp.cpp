@@ -21,7 +21,9 @@ int main(int argc, char** argv) {
     asio::io_context context;
     udp_server server(context, PORT);
     server.on_data = [](uint8_t* data, size_t size, const udp::endpoint& from) {
+#ifndef asio_net_DISABLE_ON_DATA_PRINT
       printf("on_data: %s\n", std::string((char*)data, size).c_str());
+#endif
       test_count_received++;
     };
     context.run();

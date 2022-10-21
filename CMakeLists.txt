@@ -6,6 +6,8 @@ option(asio_net_ENABLE_RPC "" ON)
 
 option(asio_net_BUILD_TEST "" OFF)
 
+option(asio_net_DISABLE_ON_DATA_PRINT "" OFF)
+
 if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     set(asio_net_BUILD_TEST ON)
 endif ()
@@ -24,9 +26,15 @@ if (asio_net_ENABLE_RPC)
 endif ()
 
 if (asio_net_BUILD_TEST)
+    message(STATUS "ASIO_PATH: $ENV{ASIO_PATH}")
     include_directories($ENV{ASIO_PATH})
     link_libraries(${PROJECT_NAME})
     link_libraries(pthread)
+
+    # for github actions/ci
+    if (asio_net_DISABLE_ON_DATA_PRINT)
+        add_definitions(-Dasio_net_DISABLE_ON_DATA_PRINT)
+    endif ()
 
     add_executable(${PROJECT_NAME}_test_tcp test/tcp.cpp)
     add_executable(${PROJECT_NAME}_test_udp test/udp.cpp)

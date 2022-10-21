@@ -1,0 +1,44 @@
+name: build
+
+on:
+  push:
+    paths-ignore:
+      - '**.md'
+  pull_request:
+    paths-ignore:
+      - '**.md'
+
+jobs:
+  Linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - name: Init ASIO
+        run: |
+          git clone https://github.com/chriskohlhoff/asio.git -b asio-1-24-0 --depth=1
+
+      - name: CMake Build
+        env:
+          ASIO_PATH: asio/asio/include
+        run: |
+          mkdir build && cd build
+          cmake -DCMAKE_BUILD_TYPE=Debug -Dasio_net_DISABLE_ON_DATA_PRINT=ON ..
+          make -j2
+
+      - name: Test TCP
+        run: |
+          cd build
+          ./asio_net_test_tcp
+
+      - name: Test UDP
+        run: |
+          cd build
+          ./asio_net_test_udp
+
+      - name: Test RPC
+        run: |
+          cd build
+          ./asio_net_test_rpc
