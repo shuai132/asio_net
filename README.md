@@ -13,8 +13,8 @@ and [RpcCore](https://github.com/shuai132/RpcCore)
 
 Options:
 
-* TCP自动处理粘包组包
-* 支持设置最大包长度 超出将自动断开
+* TCP可配置自动处理粘包问题 以支持收发完整的数据包
+* 支持设置最大包长度 超出将自动断开连接
 
 ## Requirements
 
@@ -33,10 +33,14 @@ include_directories(asio_net的目录)
 
 * TCP
 
+可通过`PackOption::ENABLE`开启自动处理粘包模式，后续收发将都是完整的数据包。
+
+默认禁用，用于常规TCP程序。
+
 ```c++
   // echo server
   asio::io_context context;
-  tcp_server server(context, PORT);
+  tcp_server server(context, PORT/*, PackOption::ENABLE*/);
   server.on_session = [](const std::weak_ptr<tcp_session>& ws) {
     auto session = ws.lock();
     session->on_close = [] {
@@ -51,7 +55,7 @@ include_directories(asio_net的目录)
 ```c++
   // echo client
   asio::io_context context;
-  tcp_client client(context);
+  tcp_client client(context/*, PackOption::ENABLE*/);
   client.on_open = [&] {
     client.send("hello");
   };

@@ -6,6 +6,7 @@
 #include "detail/log.h"
 #include "detail/noncopyable.hpp"
 #include "tcp_message.hpp"
+#include "type.h"
 
 namespace asio_net {
 
@@ -13,7 +14,8 @@ using asio::ip::tcp;
 
 class tcp_channel : private noncopyable {
  public:
-  tcp_channel(tcp::socket& socket, const uint32_t& max_body_size) : socket_(socket), max_body_size_(max_body_size) {
+  tcp_channel(tcp::socket& socket, const PackOption& pack_option, const uint32_t& max_body_size)
+      : socket_(socket), pack_option_(pack_option), max_body_size_(max_body_size) {
     asio_net_LOGD("tcp_channel: %p", this);
   }
 
@@ -49,11 +51,17 @@ class tcp_channel : private noncopyable {
 
  protected:
   void do_read_start(std::shared_ptr<tcp_channel> self = nullptr) {
-    do_read_header(std::move(self));
+    if (pack_option_ == PackOption::ENABLE) {
+      do_read_header(std::move(self));
+    } else {
+      // init read_msg_.body as buffer
+      read_msg_.body.resize(max_body_size_);
+      do_read_data(std::move(self));
+    }
   }
 
  private:
-  void do_read_header(std::shared_ptr<tcp_channel> self = nullptr) {
+  void do_read_header(std::shared_ptr<tcp_channel> self) {
     asio::async_read(socket_, asio::buffer(&read_msg_.length, sizeof(read_msg_.length)),
                      [this, self = std::move(self)](std::error_code ec, std::size_t /*length*/) mutable {
                        if (ec) {
@@ -68,7 +76,7 @@ class tcp_channel : private noncopyable {
                      });
   }
 
-  void do_read_body(std::shared_ptr<tcp_channel> self = nullptr) {
+  void do_read_body(std::shared_ptr<tcp_channel> self) {
     read_msg_.body.resize(read_msg_.length);
     asio::async_read(socket_, asio::buffer(read_msg_.body), [this, self = std::move(self)](std::error_code ec, std::size_t /*length*/) mutable {
       if (!ec) {
@@ -76,6 +84,18 @@ class tcp_channel : private noncopyable {
         read_msg_.clear();
         if (on_data) on_data(std::move(msg));
         do_read_header(std::move(self));
+      } else {
+        socket_.close();
+      }
+    });
+  }
+
+  void do_read_data(std::shared_ptr<tcp_channel> self) {
+    auto& readBuffer = read_msg_.body;
+    socket_.async_read_some(asio::buffer(readBuffer), [this, self = std::move(self)](std::error_code ec, std::size_t length) mutable {
+      if (!ec) {
+        if (on_data) on_data(std::string(read_msg_.body.data(), length));
+        do_read_data(std::move(self));
       } else {
         socket_.close();
       }
@@ -112,6 +132,7 @@ class tcp_channel : private noncopyable {
 
  private:
   tcp::socket& socket_;
+  const PackOption& pack_option_;
   const uint32_t& max_body_size_;
   tcp_message read_msg_;
 };

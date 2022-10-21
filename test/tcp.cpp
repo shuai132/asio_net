@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
   static std::atomic_bool pass_flag_client_close{false};
   std::thread([] {
     asio::io_context context;
-    tcp_server server(context, PORT);
+    tcp_server server(context, PORT, PackOption::ENABLE);
     server.on_session = [](const std::weak_ptr<tcp_session>& ws) {
       printf("on_session:\n");
       auto session = ws.lock();
@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
   }).detach();
   std::thread([] {
     asio::io_context context;
-    tcp_client client(context);
+    tcp_client client(context, PackOption::ENABLE);
     client.on_open = [&] {
       printf("client on_open:\n");
       for (uint32_t i = 0; i < test_count_max; ++i) {

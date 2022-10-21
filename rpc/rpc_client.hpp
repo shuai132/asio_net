@@ -9,7 +9,8 @@ namespace asio_net {
 
 class rpc_client : noncopyable {
  public:
-  explicit rpc_client(asio::io_context& io_context, uint32_t max_body_size = UINT32_MAX) : io_context_(io_context), client_(io_context, max_body_size) {
+  explicit rpc_client(asio::io_context& io_context, uint32_t max_body_size = UINT32_MAX)
+      : io_context_(io_context), client_(io_context, PackOption::ENABLE, max_body_size) {
     client_.on_open = [this]() {
       auto rpc = RpcCore::Rpc::create();
 
