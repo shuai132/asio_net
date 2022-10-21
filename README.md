@@ -11,6 +11,11 @@ and [RpcCore](https://github.com/shuai132/RpcCore)
 * 提供RPC实现 基于[RpcCore](https://github.com/shuai132/RpcCore)
 * 局域网内服务发现 基于UDP组播
 
+Options:
+
+* TCP自动处理粘包组包
+* 支持设置最大包长度 超出将自动断开
+
 ## Requirements
 
 * C++14

@@ -21,7 +21,7 @@ class tcp_session : public tcp_channel, public std::enable_shared_from_this<tcp_
 
 class tcp_server {
  public:
-  tcp_server(asio::io_context& io_context, uint16_t port, uint32_t max_body_size_ = 4096)
+  tcp_server(asio::io_context& io_context, uint16_t port, uint32_t max_body_size_ = UINT32_MAX)
       : io_context_(io_context), acceptor_(io_context, tcp::endpoint(tcp::v4(), port)), max_body_size_(max_body_size_) {}
 
  public:
