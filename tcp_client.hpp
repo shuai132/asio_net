@@ -12,7 +12,11 @@ class tcp_client : public tcp_channel {
 
   void open(const std::string& ip, const std::string& port) {
     tcp::resolver resolver(socket_.get_executor());
-    do_connect(resolver.resolve(ip, port));
+    try {
+      do_connect(resolver.resolve(ip, port));
+    } catch (std::exception& e) {
+      if (on_open_failed) on_open_failed();
+    }
   }
 
  public:
