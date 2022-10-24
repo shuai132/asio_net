@@ -11,26 +11,29 @@ class tcp_client : public tcp_channel {
       : tcp_channel(socket_, pack_option_, max_body_size_), socket_(io_context), pack_option_(pack_option), max_body_size_(max_body_size) {}
 
   void open(const std::string& ip, const std::string& port) {
-    tcp::resolver resolver(socket_.get_executor());
-    try {
-      do_connect(resolver.resolve(ip, port));
-    } catch (std::exception& e) {
-      if (on_open_failed) on_open_failed();
-    }
+    auto resolver = std::make_unique<tcp::resolver>(socket_.get_executor());
+    resolver->async_resolve(tcp::resolver::query(ip, port),
+                            [this, resolver = std::move(resolver)](const asio::error_code& ec, const tcp::resolver::results_type& endpoints) {
+                              if (!ec) {
+                                do_connect(endpoints);
+                              } else {
+                                if (on_open_failed) on_open_failed(ec);
+                              }
+                            });
   }
 
  public:
   std::function<void()> on_open;
-  std::function<void()> on_open_failed;
+  std::function<void(std::error_code)> on_open_failed;
 
  private:
   void do_connect(const tcp::resolver::results_type& endpoints) {
-    asio::async_connect(socket_, endpoints, [this](std::error_code ec, const tcp::endpoint&) {
+    asio::async_connect(socket_, endpoints, [this](const std::error_code& ec, const tcp::endpoint&) {
       if (!ec) {
         if (on_open) on_open();
         do_read_start();
       } else {
-        if (on_open_failed) on_open_failed();
+        if (on_open_failed) on_open_failed(ec);
       }
     });
   }

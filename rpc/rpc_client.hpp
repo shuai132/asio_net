@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 #include "RpcCore.hpp"
 #include "detail/noncopyable.hpp"
 #include "rpc_session.hpp"
@@ -38,8 +40,8 @@ class rpc_client : noncopyable {
       on_close();
     };
 
-    client_.on_open_failed = [this] {
-      on_open_failed();
+    client_.on_open_failed = [this](const std::error_code& ec) {
+      on_open_failed(ec);
     };
   }
 
@@ -54,7 +56,7 @@ class rpc_client : noncopyable {
  public:
   std::function<void(std::shared_ptr<RpcCore::Rpc>)> on_open;
   std::function<void()> on_close;
-  std::function<void()> on_open_failed;
+  std::function<void(std::error_code)> on_open_failed;
 
  private:
   asio::io_context& io_context_;
