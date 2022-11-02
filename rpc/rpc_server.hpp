@@ -18,7 +18,7 @@ class rpc_server : noncopyable {
       rpc->setTimer([this](uint32_t ms, RpcCore::Rpc::TimeoutCb cb) {
         auto timer = std::make_shared<asio::steady_timer>(io_context_);
         timer->expires_after(std::chrono::milliseconds(ms));
-        timer->async_wait([timer = std::move(timer), cb = std::move(cb)](asio::error_code) {
+        timer->async_wait([timer = std::move(timer), cb = std::move(cb)](const std::error_code&) {
           cb();
         });
       });

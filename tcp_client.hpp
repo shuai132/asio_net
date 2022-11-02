@@ -13,7 +13,7 @@ class tcp_client : public tcp_channel {
   void open(const std::string& ip, const std::string& port) {
     auto resolver = std::make_unique<tcp::resolver>(socket_.get_executor());
     resolver->async_resolve(tcp::resolver::query(ip, port),
-                            [this, resolver = std::move(resolver)](const asio::error_code& ec, const tcp::resolver::results_type& endpoints) {
+                            [this, resolver = std::move(resolver)](const std::error_code& ec, const tcp::resolver::results_type& endpoints) {
                               if (!ec) {
                                 do_connect(endpoints);
                               } else {

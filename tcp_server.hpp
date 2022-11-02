@@ -45,7 +45,7 @@ class tcp_server {
 
  private:
   void do_accept() {
-    acceptor_.async_accept([this](std::error_code ec, tcp::socket socket) {
+    acceptor_.async_accept([this](const std::error_code& ec, tcp::socket socket) {
       if (!ec) {
         auto session = std::make_shared<tcp_session>(std::move(socket), pack_option_, max_body_size_);
         session->start();

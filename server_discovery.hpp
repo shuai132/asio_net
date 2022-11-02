@@ -43,7 +43,7 @@ class receiver {
       asio_net_LOGE("receive: init err: %s", e.what());
       auto timer = std::make_shared<asio::steady_timer>(socket_.get_executor());
       timer->expires_after(std::chrono::seconds(1));
-      timer->async_wait([=](std::error_code e) mutable {
+      timer->async_wait([=](const std::error_code&) mutable {
         try_init(addr);
         timer = nullptr;
       });
@@ -51,7 +51,7 @@ class receiver {
   }
 
   void do_receive() {
-    socket_.async_receive_from(asio::buffer(data_), sender_endpoint_, [this](std::error_code ec, std::size_t length) {
+    socket_.async_receive_from(asio::buffer(data_), sender_endpoint_, [this](const std::error_code& ec, std::size_t length) {
       if (!ec) {
         std::vector<std::string> msgs;
         {
@@ -97,7 +97,7 @@ class sender {
 
  private:
   void do_send() {
-    socket_.async_send_to(asio::buffer(message_), endpoint_, [this](std::error_code ec, std::size_t /*length*/) {
+    socket_.async_send_to(asio::buffer(message_), endpoint_, [this](const std::error_code& ec, std::size_t /*length*/) {
       if (ec) {
         asio_net_LOGE("server_discovery: sender: err: %s", ec.message().c_str());
       }
@@ -107,7 +107,7 @@ class sender {
 
   void do_send_next() {
     timer_.expires_after(std::chrono::seconds(send_period_sec_));
-    timer_.async_wait([this](std::error_code ec) {
+    timer_.async_wait([this](const std::error_code& ec) {
       if (!ec) do_send();
     });
   }

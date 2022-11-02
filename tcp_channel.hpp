@@ -63,7 +63,7 @@ class tcp_channel : private noncopyable {
  private:
   void do_read_header(std::shared_ptr<tcp_channel> self) {
     asio::async_read(socket_, asio::buffer(&read_msg_.length, sizeof(read_msg_.length)),
-                     [this, self = std::move(self)](std::error_code ec, std::size_t /*length*/) mutable {
+                     [this, self = std::move(self)](const std::error_code& ec, std::size_t /*length*/) mutable {
                        if (ec) {
                          do_close();
                        }
@@ -78,7 +78,7 @@ class tcp_channel : private noncopyable {
 
   void do_read_body(std::shared_ptr<tcp_channel> self) {
     read_msg_.body.resize(read_msg_.length);
-    asio::async_read(socket_, asio::buffer(read_msg_.body), [this, self = std::move(self)](std::error_code ec, std::size_t /*length*/) mutable {
+    asio::async_read(socket_, asio::buffer(read_msg_.body), [this, self = std::move(self)](const std::error_code& ec, std::size_t /*length*/) mutable {
       if (!ec) {
         auto msg = std::move(read_msg_.body);
         read_msg_.clear();
@@ -92,7 +92,7 @@ class tcp_channel : private noncopyable {
 
   void do_read_data(std::shared_ptr<tcp_channel> self) {
     auto& readBuffer = read_msg_.body;
-    socket_.async_read_some(asio::buffer(readBuffer), [this, self = std::move(self)](std::error_code ec, std::size_t length) mutable {
+    socket_.async_read_some(asio::buffer(readBuffer), [this, self = std::move(self)](const std::error_code& ec, std::size_t length) mutable {
       if (!ec) {
         if (on_data) on_data(std::string(read_msg_.body.data(), length));
         do_read_data(std::move(self));
@@ -113,7 +113,7 @@ class tcp_channel : private noncopyable {
         asio::buffer(&keeper->length, sizeof(keeper->length)),
         asio::buffer(keeper->body),
     };
-    asio::async_write(socket_, buffer, [this, keeper = std::move(keeper)](std::error_code ec, std::size_t /*length*/) {
+    asio::async_write(socket_, buffer, [this, keeper = std::move(keeper)](const std::error_code& ec, std::size_t /*length*/) {
       if (ec) {
         do_close();
       }

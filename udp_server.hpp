@@ -19,9 +19,9 @@ class udp_server : private noncopyable {
 
  private:
   void do_receive() {
-    socket_.async_receive_from(asio::buffer((void*)data_.data(), max_length_), from_endpoint_, [this](std::error_code ec, std::size_t bytes_recv) {
-      if (!ec && bytes_recv > 0) {
-        if (on_data) on_data((uint8_t*)data_.data(), bytes_recv, from_endpoint_);
+    socket_.async_receive_from(asio::buffer((void*)data_.data(), max_length_), from_endpoint_, [this](const std::error_code& ec, size_t length) {
+      if (!ec && length > 0) {
+        if (on_data) on_data((uint8_t*)data_.data(), length, from_endpoint_);
         do_receive();
       }
     });
