@@ -63,7 +63,7 @@ include_directories(asio_net的目录)
   };
   client.on_close = [&] {
   };
-  client.open("localhost", std::to_string(PORT));
+  client.open("localhost", PORT);
   context.run();
 ```
 
@@ -117,7 +117,7 @@ include_directories(asio_net的目录)
   };
   client.on_close = [&] {
   };
-  client.open("localhost", std::to_string(PORT));
+  client.open("localhost", PORT);
   context.run();
 ```
 

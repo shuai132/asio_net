@@ -45,7 +45,7 @@ class rpc_client : noncopyable {
     };
   }
 
-  void open(const std::string& ip, const std::string& port) {
+  void open(const std::string& ip, uint16_t port) {
     client_.open(ip, port);
   }
 

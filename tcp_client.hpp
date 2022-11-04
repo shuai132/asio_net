@@ -10,9 +10,9 @@ class tcp_client : public tcp_channel {
   explicit tcp_client(asio::io_context& io_context, PackOption pack_option = PackOption::DISABLE, uint32_t max_body_size = UINT32_MAX)
       : tcp_channel(socket_, pack_option_, max_body_size_), socket_(io_context), pack_option_(pack_option), max_body_size_(max_body_size) {}
 
-  void open(const std::string& ip, const std::string& port) {
+  void open(const std::string& ip, uint16_t port) {
     auto resolver = std::make_unique<tcp::resolver>(socket_.get_executor());
-    resolver->async_resolve(tcp::resolver::query(ip, port),
+    resolver->async_resolve(tcp::resolver::query(ip, std::to_string(port)),
                             [this, resolver = std::move(resolver)](const std::error_code& ec, const tcp::resolver::results_type& endpoints) {
                               if (!ec) {
                                 do_connect(endpoints);

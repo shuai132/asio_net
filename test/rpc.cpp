@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
       printf("client on_close:\n");
       context.stop();
     };
-    client.open("localhost", std::to_string(PORT));
+    client.open("localhost", PORT);
     context.run();
   }).join();
 
