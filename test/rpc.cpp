@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
   // server
   std::thread([] {
     asio::io_context context;
-    rpc_server server(context, PORT);
+    static rpc_server server(context, PORT);  // static for test session lifecycle
     server.on_session = [](const std::weak_ptr<rpc_session>& rs) {
       printf("on_session:\n");
       auto session = rs.lock();
@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
   // client
   std::thread([] {
     asio::io_context context;
-    rpc_client client(context);
+    static rpc_client client(context);  // static for test session lifecycle
     client.on_open = [&](const std::shared_ptr<RpcCore::Rpc>& rpc) {
       printf("client on_open:\n");
       rpc->cmd("cmd")
@@ -65,9 +65,10 @@ int main(int argc, char** argv) {
 
   ASSERT(pass_flag_rpc_pass);
   ASSERT(pass_flag_client_close);
-  while (!pass_flag_session_close) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  ASSERT(pass_flag_session_close);
+  printf("\n==> All rpc_session should destroyed before here!!!\n");
 
   return EXIT_SUCCESS;
 }
