@@ -138,3 +138,10 @@ include_directories(asio_net的目录)
   server_discovery::sender sender_ip(context, "ip", "message");
   context.run();
 ```
+
+# Links
+
+* RPC library for MCU
+
+  most MCU not support asio, there is a library can be ported
+  easily: [esp_rpc](https://github.com/shuai132/esp_rpc)
