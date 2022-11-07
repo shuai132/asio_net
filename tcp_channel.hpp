@@ -78,7 +78,7 @@ class tcp_channel : private noncopyable {
 
   void do_read_body(std::shared_ptr<tcp_channel> self) {
     read_msg_.body.resize(read_msg_.length);
-    asio::async_read(socket_, asio::buffer(read_msg_.body), [this, self = std::move(self)](const std::error_code& ec, std::size_t /*length*/) mutable {
+    asio::async_read(socket_, asio::buffer(read_msg_.body), [this, self = std::move(self)](const std::error_code& ec, std::size_t) mutable {
       if (!ec) {
         auto msg = std::move(read_msg_.body);
         read_msg_.clear();
