@@ -18,13 +18,13 @@ namespace asio_net {
 namespace server_discovery {
 
 const char* addr_default = "239.255.0.1";
-const short port_default = 30001;
+const uint16_t port_default = 30001;
 
 class receiver {
   using service_found_handle_t = std::function<void(std::string name, std::string message)>;
 
  public:
-  receiver(asio::io_context& io_context, service_found_handle_t handle, const std::string& addr = addr_default, short port = port_default)
+  receiver(asio::io_context& io_context, service_found_handle_t handle, const std::string& addr = addr_default, uint16_t port = port_default)
       : socket_(io_context), service_found_handle_(std::move(handle)) {
     // create the socket so that multiple may be bound to the same address.
     asio::ip::udp::endpoint listen_endpoint(asio::ip::make_address("0.0.0.0"), port);
@@ -86,7 +86,7 @@ class receiver {
 class sender {
  public:
   sender(asio::io_context& io_context, const std::string& service_name, const std::string& message, uint send_period_sec = 1,
-         const char* addr = addr_default, short port = port_default)
+         const char* addr = addr_default, uint16_t port = port_default)
       : endpoint_(asio::ip::make_address(addr), port),
         socket_(io_context, endpoint_.protocol()),
         timer_(io_context),
