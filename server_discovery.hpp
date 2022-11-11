@@ -13,7 +13,7 @@ namespace asio_net {
 /**
  * message format:
  * prefix + '\n' + name + '\n' + message
- * i.e: "discovery\nname\nmessage
+ * i.e: "discovery\nname\nmessage"
  */
 namespace server_discovery {
 
@@ -24,7 +24,8 @@ class receiver {
   using service_found_handle_t = std::function<void(std::string name, std::string message)>;
 
  public:
-  receiver(asio::io_context& io_context, service_found_handle_t handle, const std::string& addr = addr_default, uint16_t port = port_default)
+  receiver(asio::io_context& io_context, service_found_handle_t handle,  // NOLINT(cppcoreguidelines-pro-type-member-init)
+           const std::string& addr = addr_default, uint16_t port = port_default)
       : socket_(io_context), service_found_handle_(std::move(handle)) {
     // create the socket so that multiple may be bound to the same address.
     asio::ip::udp::endpoint listen_endpoint(asio::ip::make_address("0.0.0.0"), port);
