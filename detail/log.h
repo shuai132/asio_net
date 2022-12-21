@@ -107,12 +107,12 @@
 extern int asio_net_LOG_PRINTF_IMPL(const char *fmt, ...);
 #endif
 
-#define asio_net_LOG(fmt, ...)           do{ asio_net_LOG_PRINTF_IMPL(asio_net_LOG_COLOR_GREEN   "[*]: "             fmt asio_net_LOG_END, ##__VA_ARGS__); } while(0)
-#define asio_net_LOGT(tag, fmt, ...)     do{ asio_net_LOG_PRINTF_IMPL(asio_net_LOG_COLOR_BLUE    "[" tag "]: "       fmt asio_net_LOG_END, ##__VA_ARGS__); } while(0)
-#define asio_net_LOGI(fmt, ...)          do{ asio_net_LOG_PRINTF_IMPL(asio_net_LOG_COLOR_YELLOW  "[I]: %s: "         fmt asio_net_LOG_END, asio_net_LOG_BASE_FILENAME, ##__VA_ARGS__); } while(0)
-#define asio_net_LOGW(fmt, ...)          do{ asio_net_LOG_PRINTF_IMPL(asio_net_LOG_COLOR_CARMINE "[W]: %s: %s: %d: " fmt asio_net_LOG_END, asio_net_LOG_BASE_FILENAME, __func__, __LINE__, ##__VA_ARGS__); } while(0)                     // NOLINT(bugprone-lambda-function-name)
-#define asio_net_LOGE(fmt, ...)          do{ asio_net_LOG_PRINTF_IMPL(asio_net_LOG_COLOR_RED     "[E]: %s: %s: %d: " fmt asio_net_LOG_END, asio_net_LOG_BASE_FILENAME, __func__, __LINE__, ##__VA_ARGS__); } while(0)                     // NOLINT(bugprone-lambda-function-name)
-#define asio_net_LOGF(fmt, ...)          do{ asio_net_LOG_PRINTF_IMPL(asio_net_LOG_COLOR_CYAN    "[!]: %s: %s: %d: " fmt asio_net_LOG_END, asio_net_LOG_BASE_FILENAME, __func__, __LINE__, ##__VA_ARGS__); asio_net_LOG_EXIT_PROGRAM(); } while(0) // NOLINT(bugprone-lambda-function-name)
+#define asio_net_LOG(fmt, ...)           do{ asio_net_LOG_PRINTF_IMPL(asio_net_LOG_COLOR_GREEN   "[*]: %s:%d "       fmt asio_net_LOG_END, asio_net_LOG_BASE_FILENAME, __LINE__, ##__VA_ARGS__); } while(0)
+#define asio_net_LOGT(tag, fmt, ...)     do{ asio_net_LOG_PRINTF_IMPL(asio_net_LOG_COLOR_BLUE    "[" tag "]: %s:%d " fmt asio_net_LOG_END, asio_net_LOG_BASE_FILENAME, __LINE__, ##__VA_ARGS__); } while(0)
+#define asio_net_LOGI(fmt, ...)          do{ asio_net_LOG_PRINTF_IMPL(asio_net_LOG_COLOR_YELLOW  "[I]: %s:%d "       fmt asio_net_LOG_END, asio_net_LOG_BASE_FILENAME, __LINE__, ##__VA_ARGS__); } while(0)
+#define asio_net_LOGW(fmt, ...)          do{ asio_net_LOG_PRINTF_IMPL(asio_net_LOG_COLOR_CARMINE "[W]: %s:%d [%s] "  fmt asio_net_LOG_END, asio_net_LOG_BASE_FILENAME, __LINE__, __func__, ##__VA_ARGS__); } while(0)                     // NOLINT(bugprone-lambda-function-name)
+#define asio_net_LOGE(fmt, ...)          do{ asio_net_LOG_PRINTF_IMPL(asio_net_LOG_COLOR_RED     "[E]: %s:%d [%s] "  fmt asio_net_LOG_END, asio_net_LOG_BASE_FILENAME, __LINE__, __func__, ##__VA_ARGS__); } while(0)                     // NOLINT(bugprone-lambda-function-name)
+#define asio_net_LOGF(fmt, ...)          do{ asio_net_LOG_PRINTF_IMPL(asio_net_LOG_COLOR_CYAN    "[!]: %s:%d [%s] "  fmt asio_net_LOG_END, asio_net_LOG_BASE_FILENAME, __LINE__, __func__, ##__VA_ARGS__); asio_net_LOG_EXIT_PROGRAM(); } while(0) // NOLINT(bugprone-lambda-function-name)
 
 #if defined(asio_net_LOG_IN_LIB) && !defined(asio_net_LOG_SHOW_DEBUG) && !defined(asio_net_LOG_NDEBUG)
 #define asio_net_LOG_NDEBUG
@@ -121,7 +121,7 @@ extern int asio_net_LOG_PRINTF_IMPL(const char *fmt, ...);
 #if defined(NDEBUG) || defined(asio_net_LOG_NDEBUG)
 #define asio_net_LOGD(fmt, ...)          ((void)0)
 #else
-#define asio_net_LOGD(fmt, ...)          do{ asio_net_LOG_PRINTF_IMPL(asio_net_LOG_COLOR_DEFAULT "[D]: %s: "         fmt asio_net_LOG_END, asio_net_LOG_BASE_FILENAME, ##__VA_ARGS__); } while(0)
+#define asio_net_LOGD(fmt, ...)          do{ asio_net_LOG_PRINTF_IMPL(asio_net_LOG_COLOR_DEFAULT "[D]: %s:%d "       fmt asio_net_LOG_END, asio_net_LOG_BASE_FILENAME, __LINE__, ##__VA_ARGS__); } while(0)
 #endif
 
 #if defined(asio_net_LOG_SHOW_VERBOSE)
