@@ -108,7 +108,7 @@ class tcp_channel : private noncopyable {
 
   void do_write(std::string msg) {
     auto keeper = std::make_unique<tcp_message>(std::move(msg));
-    if (keeper->length > max_body_size_) {
+    if (pack_option_ == PackOption::ENABLE && keeper->length > max_body_size_) {
       asio_net_LOGE("write: body size=%u > max_body_size=%u", keeper->length, max_body_size_);
       do_close();
     }
