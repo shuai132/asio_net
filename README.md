@@ -56,12 +56,10 @@ include_directories(asio_net的目录)
   // echo client
   asio::io_context context;
   tcp_client client(context/*, PackOption::ENABLE*/);
-  client.on_open = [&] {
-    client.send("hello");
+
+  client.on_data = [](const std::string& data) {
   };
-  client.on_data = [&](const std::string& data) {
-  };
-  client.on_close = [&] {
+  client.on_close = [] {
   };
   client.open("localhost", PORT);
   context.run();
@@ -108,14 +106,14 @@ include_directories(asio_net的目录)
   // client
   asio::io_context context;
   rpc_client client(context);
-  client.on_open = [&](const std::shared_ptr<RpcCore::Rpc>& rpc) {
+  client.on_open = [](const std::shared_ptr<RpcCore::Rpc>& rpc) {
     rpc->cmd("cmd")
         ->msg(RpcCore::String("hello"))
-        ->rsp([&](const RpcCore::String& data) {
+        ->rsp([](const RpcCore::String& data) {
         })
         ->call();
   };
-  client.on_close = [&] {
+  client.on_close = [] {
   };
   client.open("localhost", PORT);
   context.run();

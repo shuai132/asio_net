@@ -15,7 +15,6 @@ int main(int argc, char** argv) {
   };
   client.on_data = [&](const std::string& data) {
     printf("client on_data: %s\n", data.c_str());
-    client.close();
   };
   client.on_close = [&] {
     printf("client on_close:\n");
