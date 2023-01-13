@@ -17,6 +17,10 @@ class tcp_channel : private noncopyable {
   tcp_channel(tcp::socket& socket, const PackOption& pack_option, const uint32_t& max_body_size)
       : socket_(socket), pack_option_(pack_option), max_body_size_(max_body_size) {
     asio_net_LOGD("tcp_channel: %p", this);
+    if (pack_option == PackOption::DISABLE) {
+      max_body_size_ = std::min<uint32_t>(1024, max_body_size_);
+      max_body_size_ = std::max<uint32_t>(32, max_body_size_);
+    }
   }
 
   ~tcp_channel() {
@@ -133,7 +137,7 @@ class tcp_channel : private noncopyable {
  private:
   tcp::socket& socket_;
   const PackOption& pack_option_;
-  const uint32_t& max_body_size_;
+  uint32_t max_body_size_;
   tcp_message read_msg_;
 };
 
