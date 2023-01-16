@@ -18,9 +18,8 @@ int main(int argc, char** argv) {
         })
         ->call();
   };
-  client.on_close = [&] {
+  client.on_close = [] {
     printf("client on_close:\n");
-    context.stop();
   };
   client.open("localhost", PORT);
   context.run();
