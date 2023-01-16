@@ -13,12 +13,11 @@ int main(int argc, char** argv) {
     printf("client on_open:\n");
     client.send("hello");
   };
-  client.on_data = [&](const std::string& data) {
+  client.on_data = [](const std::string& data) {
     printf("client on_data: %s\n", data.c_str());
   };
-  client.on_close = [&] {
+  client.on_close = [] {
     printf("client on_close:\n");
-    context.stop();
   };
   client.open("localhost", PORT);
   context.run();

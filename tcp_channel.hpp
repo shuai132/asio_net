@@ -89,7 +89,7 @@ class tcp_channel : private noncopyable {
         if (on_data) on_data(std::move(msg));
         do_read_header(std::move(self));
       } else {
-        socket_.close();
+        do_close();
       }
     });
   }
@@ -101,7 +101,7 @@ class tcp_channel : private noncopyable {
         if (on_data) on_data(std::string(read_msg_.body.data(), length));
         do_read_data(std::move(self));
       } else {
-        socket_.close();
+        do_close();
       }
     });
   }
