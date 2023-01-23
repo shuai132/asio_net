@@ -28,7 +28,8 @@ class rpc_session : noncopyable, public std::enable_shared_from_this<rpc_session
     rpc->setTimer([this](uint32_t ms, RpcCore::Rpc::TimeoutCb cb) {
       auto timer = std::make_shared<asio::steady_timer>(io_context_);
       timer->expires_after(std::chrono::milliseconds(ms));
-      timer->async_wait([timer = std::move(timer), cb = std::move(cb)](const std::error_code&) {
+      auto tp = timer.get();
+      tp->async_wait([timer = std::move(timer), cb = std::move(cb)](const std::error_code&) {
         cb();
       });
     });

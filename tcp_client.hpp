@@ -12,14 +12,15 @@ class tcp_client : public tcp_channel {
 
   void open(const std::string& ip, uint16_t port) {
     auto resolver = std::make_unique<tcp::resolver>(socket_.get_executor());
-    resolver->async_resolve(tcp::resolver::query(ip, std::to_string(port)),
-                            [this, resolver = std::move(resolver)](const std::error_code& ec, const tcp::resolver::results_type& endpoints) {
-                              if (!ec) {
-                                do_connect(endpoints);
-                              } else {
-                                if (on_open_failed) on_open_failed(ec);
-                              }
-                            });
+    auto rp = resolver.get();
+    rp->async_resolve(tcp::resolver::query(ip, std::to_string(port)),
+                      [this, resolver = std::move(resolver)](const std::error_code& ec, const tcp::resolver::results_type& endpoints) {
+                        if (!ec) {
+                          do_connect(endpoints);
+                        } else {
+                          if (on_open_failed) on_open_failed(ec);
+                        }
+                      });
   }
 
  public:
