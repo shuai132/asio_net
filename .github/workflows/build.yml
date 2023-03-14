@@ -42,3 +42,13 @@ jobs:
         run: |
           cd build
           ./asio_net_test_rpc
+
+      - name: Test Domain TCP
+        run: |
+          cd build
+          ./asio_net_test_domain_tcp
+
+      - name: Test Domain RPC
+        run: |
+          cd build
+          ./asio_net_test_domain_rpc
