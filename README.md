@@ -10,6 +10,7 @@ and [RpcCore](https://github.com/shuai132/RpcCore)
 * 简化TCP、UDP相关程序的编写 依赖[ASIO](http://think-async.com/Asio/)
 * 提供RPC实现 基于[RpcCore](https://github.com/shuai132/RpcCore)
 * 局域网内服务发现 基于UDP组播
+* 支持域套接字（domain socket）
 
 Options:
 
