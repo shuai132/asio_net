@@ -14,7 +14,7 @@ class rpc_server_t : noncopyable {
   rpc_server_t(asio::io_context& io_context, uint16_t port, uint32_t max_body_size_ = UINT32_MAX)
       : io_context_(io_context), server_(io_context, port, PackOption::ENABLE, max_body_size_) {
     static_assert(std::is_same<T, asio::ip::tcp>::value, "");
-    server_.on_session = [this](std::weak_ptr<detail::stream_session<T>> ws) {
+    server_.on_session = [this](std::weak_ptr<detail::tcp_session_t<T>> ws) {
       auto session = std::make_shared<rpc_session_t<T>>(io_context_);
       session->init(std::move(ws));
       if (on_session) {
@@ -26,7 +26,7 @@ class rpc_server_t : noncopyable {
   rpc_server_t(asio::io_context& io_context, const std::string& endpoint, uint32_t max_body_size_ = UINT32_MAX)
       : io_context_(io_context), server_(io_context, endpoint, PackOption::ENABLE, max_body_size_) {
     static_assert(std::is_same<T, asio::local::stream_protocol>::value, "");
-    server_.on_session = [this](std::weak_ptr<detail::stream_session<T>> ws) {
+    server_.on_session = [this](std::weak_ptr<detail::tcp_session_t<T>> ws) {
       auto session = std::make_shared<rpc_session_t<T>>(io_context_);
       session->init(std::move(ws));
       if (on_session) {

@@ -10,15 +10,15 @@ namespace asio_net {
 namespace detail {
 
 template <typename T>
-class stream_session : public tcp_channel_t<T>, public std::enable_shared_from_this<stream_session<T>> {
+class tcp_session_t : public tcp_channel_t<T>, public std::enable_shared_from_this<tcp_session_t<T>> {
   using socket = typename T::socket;
 
  public:
-  explicit stream_session(socket socket, const PackOption& pack_option, const uint32_t& max_body_size)
+  explicit tcp_session_t(socket socket, const PackOption& pack_option, const uint32_t& max_body_size)
       : tcp_channel_t<T>(socket_, pack_option, max_body_size), socket_(std::move(socket)) {}
 
   void start() {
-    tcp_channel_t<T>::do_read_start(stream_session<T>::shared_from_this());
+    tcp_channel_t<T>::do_read_start(tcp_session_t<T>::shared_from_this());
   }
 
  private:
@@ -59,13 +59,13 @@ class tcp_server_t {
   }
 
  public:
-  std::function<void(std::weak_ptr<stream_session<T>>)> on_session;
+  std::function<void(std::weak_ptr<tcp_session_t<T>>)> on_session;
 
  private:
   void do_accept() {
     acceptor_.async_accept([this](const std::error_code& ec, socket socket) {
       if (!ec) {
-        auto session = std::make_shared<stream_session<T>>(std::move(socket), pack_option_, max_body_size_);
+        auto session = std::make_shared<tcp_session_t<T>>(std::move(socket), pack_option_, max_body_size_);
         session->start();
         if (on_session) on_session(session);
       }

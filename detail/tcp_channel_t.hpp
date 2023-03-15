@@ -14,6 +14,7 @@ namespace detail {
 template <typename T>
 class tcp_channel_t : private noncopyable {
   using socket = typename T::socket;
+  using endpoint = typename T::endpoint;
 
  public:
   tcp_channel_t(socket& socket, const PackOption& pack_option, const uint32_t& max_body_size)
@@ -43,11 +44,11 @@ class tcp_channel_t : private noncopyable {
     return socket_.is_open();
   }
 
-  typename T::endpoint local_endpoint() {
+  endpoint local_endpoint() {
     return socket_.local_endpoint();
   }
 
-  typename T::endpoint remote_endpoint() {
+  endpoint remote_endpoint() {
     return socket_.remote_endpoint();
   }
 
