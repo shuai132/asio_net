@@ -8,9 +8,11 @@
 
 using namespace asio_net;
 
-const uint16_t PORT = 6666;
+const char* ENDPOINT = "/tmp/foobar";
 
 int main(int argc, char** argv) {
+  ::unlink(ENDPOINT);  // remove previous binding
+
   static uint32_t test_count_max = 100000;
   static std::atomic_uint32_t test_count_received;
   if (argc >= 2) {
@@ -19,8 +21,8 @@ int main(int argc, char** argv) {
 
   std::thread([] {
     asio::io_context context;
-    udp_server server(context, PORT);
-    server.on_data = [](uint8_t* data, size_t size, const udp_server::endpoint& from) {
+    domain_udp_server server(context, ENDPOINT);
+    server.on_data = [](uint8_t* data, size_t size, const domain_udp_server::endpoint& from) {
 #ifndef asio_net_DISABLE_ON_DATA_PRINT
       printf("on_data: %s\n", std::string((char*)data, size).c_str());
 #endif
@@ -28,11 +30,13 @@ int main(int argc, char** argv) {
     };
     context.run();
   }).detach();
+
+  // wait domain create
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
   std::thread([] {
     asio::io_context context;
-    udp_client client(context);
-    auto endpoint = udp_client::endpoint(asio::ip::address_v4::from_string("127.0.0.1"), PORT);
-    client.connect(endpoint);
+    domain_udp_client client(context, ENDPOINT);
     context.post([&client] {
       for (uint32_t i = 0; i < test_count_max; ++i) {
         auto data = std::to_string(i);
