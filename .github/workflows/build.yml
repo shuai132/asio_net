@@ -48,6 +48,11 @@ jobs:
           cd build
           ./asio_net_test_domain_tcp
 
+      - name: Test Domain UDP
+        run: |
+          cd build
+          ./asio_net_test_domain_udp
+
       - name: Test Domain RPC
         run: |
           cd build

@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <thread>
 
+#include "assert_def.h"
 #include "udp_client.hpp"
 #include "udp_server.hpp"
 
@@ -14,7 +15,7 @@ int main(int argc, char** argv) {
   static uint32_t test_count_max = 100000;
   static std::atomic_uint32_t test_count_received;
   if (argc >= 2) {
-    test_count_max = std::atol(argv[1]);
+    test_count_max = std::strtol(argv[1], nullptr, 10);
   }
 
   std::thread([] {
@@ -28,21 +29,31 @@ int main(int argc, char** argv) {
     };
     context.run();
   }).detach();
-  std::thread([] {
+
+  std::atomic_uint32_t send_failed_count{0};
+  std::thread([&] {
     asio::io_context context;
     udp_client client(context);
-    auto endpoint = udp_client::endpoint(asio::ip::address_v4::from_string("127.0.0.1"), PORT);
-    client.connect(endpoint);
-    context.post([&client] {
+    context.post([&] {
+      udp_client::endpoint endpoint(asio::ip::address_v4::from_string("127.0.0.1"), PORT);
       for (uint32_t i = 0; i < test_count_max; ++i) {
         auto data = std::to_string(i);
-        client.send(data);
+        client.send_to(data, endpoint, [&](const std::error_code& ec, std::size_t size) {
+          if (ec) {
+            send_failed_count++;
+          }
+        });
         usleep(1);
       }
     });
     context.run();
   }).join();
+
   sleep(1);
+  printf("test_count_max: %d\n", test_count_max);
+  printf("test_count_received: %d\n", test_count_received.load());
+  printf("send_failed_count: %d\n", send_failed_count.load());
   printf("lost: %f%%\n", 100 * (double)(test_count_max - test_count_received) / test_count_max);
+  ASSERT(test_count_max - test_count_received == send_failed_count);
   return EXIT_SUCCESS;
 }

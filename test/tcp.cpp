@@ -15,7 +15,7 @@ int main(int argc, char** argv) {
   static uint32_t test_count_max = 100000;
   static uint32_t test_count_expect = 0;
   if (argc >= 2) {
-    test_count_max = std::atol(argv[1]);
+    test_count_max = std::strtol(argv[1], nullptr, 10);
   }
 
   static std::atomic_bool pass_flag_session_close{false};
