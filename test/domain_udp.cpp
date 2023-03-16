@@ -36,11 +36,12 @@ int main(int argc, char** argv) {
 
   std::thread([] {
     asio::io_context context;
-    domain_udp_client client(context, ENDPOINT);
+    domain_udp_client client(context);
     context.post([&client] {
+      domain_udp_client::endpoint endpoint(ENDPOINT);
       for (uint32_t i = 0; i < test_count_max; ++i) {
         auto data = std::to_string(i);
-        client.send(data);
+        client.send_to(data, endpoint);
         usleep(1);
       }
     });
