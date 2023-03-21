@@ -68,9 +68,10 @@ class tcp_server_t {
         auto session = std::make_shared<tcp_session_t<T>>(std::move(socket), pack_option_, max_body_size_);
         session->start();
         if (on_session) on_session(session);
+        do_accept();
+      } else {
+        asio_net_LOGE("do_accept: %s", ec.message().c_str());
       }
-
-      do_accept();
     });
   }
 

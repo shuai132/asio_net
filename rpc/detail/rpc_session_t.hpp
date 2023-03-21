@@ -44,12 +44,12 @@ class rpc_session_t : noncopyable, public std::enable_shared_from_this<rpc_sessi
       }
     };
 
-    // bind rpc_session_t lifecycle to tcp_session and end with on_close
-    tcp_session->on_close = [rpc_session_t = this->shared_from_this()]() mutable {
-      if (rpc_session_t->on_close) {
-        rpc_session_t->on_close();
+    // bind rpc_session lifecycle to tcp_session and end with on_close
+    tcp_session->on_close = [rpc_session = this->shared_from_this()]() mutable {
+      if (rpc_session->on_close) {
+        rpc_session->on_close();
       }
-      rpc_session_t = nullptr;
+      rpc_session = nullptr;
     };
 
     tcp_session->on_data = [this](std::string data) {
