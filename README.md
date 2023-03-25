@@ -2,21 +2,23 @@
 
 [![Build Status](https://github.com/shuai132/asio_net/workflows/build/badge.svg)](https://github.com/shuai132/asio_net/actions?workflow=build)
 
-a Tiny Async TCP/UDP/RPC library based on [ASIO](http://think-async.com/Asio/)
+a tiny Async TCP/UDP/RPC library based on [ASIO](http://think-async.com/Asio/)
 and [RpcCore](https://github.com/shuai132/RpcCore)
 
 ## Features
 
-* 简化TCP、UDP相关程序的编写 依赖[ASIO](http://think-async.com/Asio/)
-* 提供RPC实现 基于[RpcCore](https://github.com/shuai132/RpcCore)
-* 局域网内服务发现 基于UDP组播
-* 支持域套接字（Domain Socket）
-* 完善的单元测试
+* Simplifies the development of TCP/UDP programs, relying on: [ASIO](http://think-async.com/Asio/)
+* Provides RPC implementation based on: [RpcCore](https://github.com/shuai132/RpcCore)
+* LAN service discovery based on UDP multicast
+* Supports domain sockets
+* Comprehensive unittests
 
 Options:
 
-* TCP可配置自动处理粘包问题 以支持收发完整的数据包
-* 支持设置最大包长度 超出将自动断开连接
+* TCP can be configured to automatically handle the problem of packet fragmentation to support the transmission of
+  complete data packets.
+
+* Supports setting the maximum packet length, and will automatically disconnect if exceeded.
 
 ## Requirements
 
@@ -25,19 +27,15 @@ Options:
 
 ## Usage
 
-在自己的项目添加搜索路径
-
-```cmake
-include_directories(asio_net的目录)
-```
-
-以下是各模块的使用示例，完整的单元测试见: [test](./test)
+The following are examples of using each module. For complete unit tests,
+please refer to the source code: [test](./test)
 
 * TCP
 
-可通过`PackOption::ENABLE`开启自动处理粘包模式，后续收发将都是完整的数据包。
+You can enable automatic handling of packet fragmentation using `PackOption::ENABLE`.
+Subsequent send and receive will be complete data packets.
 
-默认禁用，用于常规TCP程序。
+By default, this feature is disabled.
 
 ```c++
   // echo server
@@ -95,7 +93,7 @@ include_directories(asio_net的目录)
   rpc_server server(context, PORT);
   server.on_session = [](const std::weak_ptr<rpc_session>& rs) {
     auto session = rs.lock();
-    session->on_close = [rs] {
+    session->on_close = [] {
     };
     session->rpc->subscribe("cmd", [](const RpcCore::String& data) -> RpcCore::String {
       return "world";
@@ -143,5 +141,4 @@ include_directories(asio_net的目录)
 
 * RPC library for MCU
 
-  most MCU not support asio, there is a library can be ported
-  easily: [esp_rpc](https://github.com/shuai132/esp_rpc)
+  most MCU not support asio, there is a library can be ported easily: [esp_rpc](https://github.com/shuai132/esp_rpc)
