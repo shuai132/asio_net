@@ -1,5 +1,6 @@
 #include <cstdio>
 
+#include "log.h"
 #include "rpc_server.hpp"
 
 using namespace asio_net;
@@ -11,12 +12,12 @@ int main(int argc, char** argv) {
   rpc_server server(context, PORT);
   server.on_session = [](const std::weak_ptr<rpc_session>& rs) {
     auto session = rs.lock();
-    printf("on_session: %p\n", session.get());
+    LOG("on_session: %p", session.get());
     session->on_close = [rs] {
-      printf("session on_close: %p\n", rs.lock().get());
+      LOG("session on_close: %p", rs.lock().get());
     };
     session->rpc->subscribe("cmd", [](const RpcCore::String& data) -> RpcCore::String {
-      printf("session on cmd: %s\n", data.c_str());
+      LOG("session on cmd: %s", data.c_str());
       return "world";
     });
   };

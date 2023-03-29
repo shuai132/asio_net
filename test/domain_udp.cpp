@@ -4,6 +4,7 @@
 #include <thread>
 
 #include "assert_def.h"
+#include "log.h"
 #include "udp_client.hpp"
 #include "udp_server.hpp"
 
@@ -25,7 +26,7 @@ int main(int argc, char** argv) {
     domain_udp_server server(context, ENDPOINT);
     server.on_data = [](uint8_t* data, size_t size, const domain_udp_server::endpoint& from) {
 #ifndef asio_net_DISABLE_ON_DATA_PRINT
-      printf("on_data: %s\n", std::string((char*)data, size).c_str());
+      LOG("on_data: %s", std::string((char*)data, size).c_str());
 #endif
       test_count_received++;
     };
@@ -55,10 +56,10 @@ int main(int argc, char** argv) {
   }).join();
 
   sleep(1);
-  printf("test_count_max: %d\n", test_count_max);
-  printf("test_count_received: %d\n", test_count_received.load());
-  printf("send_failed_count: %d\n", send_failed_count.load());
-  printf("lost: %f%%\n", 100 * (double)(test_count_max - test_count_received) / test_count_max);
+  LOG("test_count_max: %d", test_count_max);
+  LOG("test_count_received: %d", test_count_received.load());
+  LOG("send_failed_count: %d", send_failed_count.load());
+  LOG("lost: %f%%", 100 * (double)(test_count_max - test_count_received) / test_count_max);
   ASSERT(test_count_max - test_count_received == send_failed_count);
   return EXIT_SUCCESS;
 }

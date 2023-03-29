@@ -1,5 +1,6 @@
 #include <cstdio>
 
+#include "log.h"
 #include "tcp_client.hpp"
 
 using namespace asio_net;
@@ -10,14 +11,14 @@ int main(int argc, char** argv) {
   asio::io_context context;
   tcp_client client(context);
   client.on_open = [&] {
-    printf("client on_open:\n");
+    LOG("client on_open:");
     client.send("hello");
   };
   client.on_data = [](const std::string& data) {
-    printf("client on_data: %s\n", data.c_str());
+    LOG("client on_data: %s", data.c_str());
   };
   client.on_close = [] {
-    printf("client on_close:\n");
+    LOG("client on_close:");
   };
   client.open("localhost", PORT);
   context.run();

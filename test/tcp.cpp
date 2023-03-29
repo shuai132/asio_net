@@ -4,6 +4,7 @@
 #include <thread>
 
 #include "assert_def.h"
+#include "log.h"
 #include "tcp_client.hpp"
 #include "tcp_server.hpp"
 
@@ -24,16 +25,16 @@ int main(int argc, char** argv) {
     asio::io_context context;
     tcp_server server(context, PORT, PackOption::ENABLE);
     server.on_session = [](const std::weak_ptr<tcp_session>& ws) {
-      printf("on_session:\n");
+      LOG("on_session:");
       auto session = ws.lock();
       session->on_close = [] {
-        printf("session on_close:\n");
+        LOG("session on_close:");
         pass_flag_session_close = true;
       };
       session->on_data = [ws](std::string data) {
         ASSERT(!ws.expired());
 #ifndef asio_net_DISABLE_ON_DATA_PRINT
-        printf("session on_data: %s\n", data.c_str());
+        LOG("session on_data: %s", data.c_str());
 #endif
         ws.lock()->send(std::move(data));
       };
@@ -44,14 +45,14 @@ int main(int argc, char** argv) {
     asio::io_context context;
     tcp_client client(context, PackOption::ENABLE);
     client.on_open = [&] {
-      printf("client on_open:\n");
+      LOG("client on_open:");
       for (uint32_t i = 0; i < test_count_max; ++i) {
         client.send(std::to_string(i));
       }
     };
     client.on_data = [&](const std::string& data) {
 #ifndef asio_net_DISABLE_ON_DATA_PRINT
-      printf("client on_data: %s\n", data.c_str());
+      LOG("client on_data: %s", data.c_str());
 #endif
       ASSERT(std::to_string(test_count_expect++) == data);
       if (test_count_expect == test_count_max - 1) {
@@ -61,7 +62,7 @@ int main(int argc, char** argv) {
     client.on_close = [&] {
       pass_flag_client_close = true;
       ASSERT(test_count_expect == test_count_max - 1);
-      printf("client on_close:\n");
+      LOG("client on_close:");
       context.stop();
     };
     client.open("localhost", PORT);

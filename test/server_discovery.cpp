@@ -2,13 +2,15 @@
 
 #include <cstdio>
 
+#include "log.h"
+
 using namespace asio_net;
 
 int main(int argc, char** argv) {
   std::thread([] {
     asio::io_context context;
     server_discovery::receiver receiver(context, [](const std::string& name, const std::string& message) {
-      printf("receive: name: %s, message: %s\n", name.c_str(), message.c_str());
+      LOG("receive: name: %s, message: %s", name.c_str(), message.c_str());
     });
     context.run();
   }).detach();
