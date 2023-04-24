@@ -13,7 +13,13 @@ class tcp_client_t : public tcp_channel_t<T> {
 
  public:
   explicit tcp_client_t(asio::io_context& io_context, PackOption pack_option = PackOption::DISABLE, uint32_t max_body_size = UINT32_MAX)
-      : tcp_channel_t<T>(socket_, pack_option_, max_body_size), socket_(io_context), pack_option_(pack_option) {}
+      : tcp_channel_t<T>(socket_, pack_option_, max_body_size_), socket_(io_context), pack_option_(pack_option), max_body_size_([&] {
+          if (pack_option == PackOption::DISABLE) {
+            max_body_size = std::min<uint32_t>(1024, max_body_size);
+            max_body_size = std::max<uint32_t>(32, max_body_size);
+          }
+          return max_body_size;
+        }()) {}
 
   void open(const std::string& ip, uint16_t port) {
     static_assert(std::is_same<asio::ip::tcp, T>::value, "");
@@ -55,6 +61,7 @@ class tcp_client_t : public tcp_channel_t<T> {
  private:
   socket socket_;
   PackOption pack_option_;
+  uint32_t max_body_size_;
 };
 
 }  // namespace detail
