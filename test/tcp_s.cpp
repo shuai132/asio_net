@@ -1,5 +1,3 @@
-#include <cstdio>
-
 #include "assert_def.h"
 #include "log.h"
 #include "tcp_server.hpp"

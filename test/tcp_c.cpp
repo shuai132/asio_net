@@ -1,5 +1,3 @@
-#include <cstdio>
-
 #include "log.h"
 #include "tcp_client.hpp"
 

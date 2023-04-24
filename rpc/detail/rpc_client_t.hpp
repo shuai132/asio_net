@@ -8,6 +8,7 @@
 #include "tcp_client.hpp"
 
 namespace asio_net {
+namespace detail {
 
 template <typename T>
 class rpc_client_t : noncopyable {
@@ -55,4 +56,5 @@ class rpc_client_t : noncopyable {
   std::shared_ptr<detail::tcp_client_t<T>> client_;
 };
 
+}  // namespace detail
 }  // namespace asio_net

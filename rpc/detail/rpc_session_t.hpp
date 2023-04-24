@@ -7,6 +7,7 @@
 #include "detail/tcp_channel_t.hpp"
 
 namespace asio_net {
+namespace detail {
 
 template <typename T>
 class rpc_session_t : noncopyable, public std::enable_shared_from_this<rpc_session_t<T>> {
@@ -75,4 +76,5 @@ class rpc_session_t : noncopyable, public std::enable_shared_from_this<rpc_sessi
   std::weak_ptr<detail::tcp_channel_t<T>> tcp_session_;
 };
 
+}  // namespace detail
 }  // namespace asio_net

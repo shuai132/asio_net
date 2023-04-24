@@ -7,6 +7,7 @@
 #include "tcp_server.hpp"
 
 namespace asio_net {
+namespace detail {
 
 template <typename T>
 class rpc_server_t : noncopyable {
@@ -48,4 +49,5 @@ class rpc_server_t : noncopyable {
   detail::tcp_server_t<T> server_;
 };
 
+}  // namespace detail
 }  // namespace asio_net
