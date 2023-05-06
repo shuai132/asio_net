@@ -7,10 +7,11 @@ and [RpcCore](https://github.com/shuai132/RpcCore)
 
 ## Features
 
-* Simplifies the development of TCP/UDP programs, relying on: [ASIO](http://think-async.com/Asio/)
-* Provides RPC implementation based on: [RpcCore](https://github.com/shuai132/RpcCore)
-* LAN service discovery based on UDP multicast
-* Supports domain sockets
+* Header-Only
+* TCP/UDP support, rely on: [ASIO](http://think-async.com/Asio/)
+* RPC support, rely on: [RpcCore](https://github.com/shuai132/RpcCore)
+* Service discovery based on UDP multicast
+* Domain sockets support
 * Comprehensive unittests
 
 Options:
