@@ -69,6 +69,7 @@ class tcp_channel_t : private noncopyable {
                      [this, self = std::move(self)](const std::error_code& ec, std::size_t /*length*/) mutable {
                        if (ec) {
                          do_close();
+                         return;
                        }
                        if (read_msg_.length <= max_body_size_) {
                          do_read_body(std::move(self));
@@ -125,10 +126,10 @@ class tcp_channel_t : private noncopyable {
 
   void do_close() {
     if (!is_open()) return;
-    try {
-      socket_.close();
-    } catch (std::exception& e) {
-      asio_net_LOGW("do_close: %s", e.what());
+    asio::error_code ec;
+    socket_.close(ec);
+    if (ec) {
+      asio_net_LOGW("do_close: %s", ec.message().c_str());
     }
     if (on_close) on_close();
   }
