@@ -113,10 +113,11 @@ class tcp_channel_t : private noncopyable {
       do_close();
     }
 
-    auto buffer = {
-        asio::buffer(&keeper->length, sizeof(keeper->length)),
-        asio::buffer(keeper->body),
-    };
+    std::vector<asio::const_buffer> buffer;
+    if (pack_option_ == PackOption::ENABLE) {
+      buffer.emplace_back(&keeper->length, sizeof(keeper->length));
+    }
+    buffer.emplace_back(asio::buffer(keeper->body));
     asio::async_write(socket_, buffer, [this, keeper = std::move(keeper)](const std::error_code& ec, std::size_t /*length*/) {
       if (ec) {
         do_close();
