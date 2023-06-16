@@ -33,7 +33,7 @@ please refer to the source code: [test](./test)
 
 * TCP
 
-You can enable automatic handling of packet fragmentation using `PackOption::ENABLE`.
+You can enable automatic handling of packet fragmentation using `Config`.
 Subsequent send and receive will be complete data packets.
 
 By default, this feature is disabled.
@@ -41,7 +41,7 @@ By default, this feature is disabled.
 ```c++
   // echo server
   asio::io_context context;
-  tcp_server server(context, PORT/*, PackOption::ENABLE*/);
+  tcp_server server(context, PORT/*, Config*/);
   server.on_session = [](const std::weak_ptr<tcp_session>& ws) {
     auto session = ws.lock();
     session->on_close = [] {
@@ -56,7 +56,7 @@ By default, this feature is disabled.
 ```c++
   // echo client
   asio::io_context context;
-  tcp_client client(context/*, PackOption::ENABLE*/);
+  tcp_client client(context/*, Config*/);
 
   client.on_data = [](const std::string& data) {
   };

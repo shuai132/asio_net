@@ -17,8 +17,7 @@ class tcp_channel_t : private noncopyable {
   using endpoint = typename T::endpoint;
 
  public:
-  tcp_channel_t(socket& socket, const PackOption& pack_option, const uint32_t& max_body_size)
-      : socket_(socket), pack_option_(pack_option), max_body_size_(max_body_size) {
+  tcp_channel_t(socket& socket, const Config& config) : socket_(socket), config_(config) {
     asio_net_LOGD("tcp_channel: %p", this);
   }
 
@@ -54,11 +53,11 @@ class tcp_channel_t : private noncopyable {
 
  protected:
   void do_read_start(std::shared_ptr<tcp_channel_t> self = nullptr) {
-    if (pack_option_ == PackOption::ENABLE) {
+    if (config_.auto_pack) {
       do_read_header(std::move(self));
     } else {
       // init read_msg_.body as buffer
-      read_msg_.body.resize(max_body_size_);
+      read_msg_.body.resize(config_.max_body_size);
       do_read_data(std::move(self));
     }
   }
@@ -71,10 +70,10 @@ class tcp_channel_t : private noncopyable {
                          do_close();
                          return;
                        }
-                       if (read_msg_.length <= max_body_size_) {
+                       if (read_msg_.length <= config_.max_body_size) {
                          do_read_body(std::move(self));
                        } else {
-                         asio_net_LOGE("read: body size=%u > max_body_size=%u", read_msg_.length, max_body_size_);
+                         asio_net_LOGE("read: body size=%u > max_body_size=%u", read_msg_.length, config_.max_body_size);
                          do_close();
                        }
                      });
@@ -108,13 +107,13 @@ class tcp_channel_t : private noncopyable {
 
   void do_write(std::string msg) {
     auto keeper = std::make_unique<detail::message>(std::move(msg));
-    if (pack_option_ == PackOption::ENABLE && keeper->length > max_body_size_) {
-      asio_net_LOGE("write: body size=%u > max_body_size=%u", keeper->length, max_body_size_);
+    if (config_.auto_pack && keeper->length > config_.max_body_size) {
+      asio_net_LOGE("write: body size=%u > max_body_size=%u", keeper->length, config_.max_body_size);
       do_close();
     }
 
     std::vector<asio::const_buffer> buffer;
-    if (pack_option_ == PackOption::ENABLE) {
+    if (config_.auto_pack) {
       buffer.emplace_back(&keeper->length, sizeof(keeper->length));
     }
     buffer.emplace_back(asio::buffer(keeper->body));
@@ -137,8 +136,7 @@ class tcp_channel_t : private noncopyable {
 
  private:
   socket& socket_;
-  const PackOption& pack_option_;
-  const uint32_t& max_body_size_;
+  const Config& config_;
   detail::message read_msg_;
 };
 
