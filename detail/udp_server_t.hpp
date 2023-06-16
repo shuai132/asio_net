@@ -20,6 +20,13 @@ class udp_server_t : private noncopyable {
     do_receive();
   }
 
+  /**
+   * domain socket
+   *
+   * @param io_context
+   * @param endpoint e.g. /tmp/foobar
+   * @param max_length
+   */
   udp_server_t(asio::io_context& io_context, const std::string& endpoint, uint16_t max_length = 4096)
       : socket_(io_context, typename T::endpoint(endpoint)), max_length_(max_length) {
     data_.resize(max_length);

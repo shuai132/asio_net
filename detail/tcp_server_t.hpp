@@ -37,6 +37,13 @@ class tcp_server_t {
     config_.init();
   }
 
+  /**
+   * domain socket
+   *
+   * @param io_context
+   * @param endpoint e.g. /tmp/foobar
+   * @param config
+   */
   tcp_server_t(asio::io_context& io_context, const std::string& endpoint, Config config = {})
       : io_context_(io_context), acceptor_(io_context, typename T::endpoint(endpoint)), config_(config) {
     config_.init();

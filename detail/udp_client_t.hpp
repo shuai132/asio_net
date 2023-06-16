@@ -31,6 +31,11 @@ class udp_client_t : private noncopyable {
     send_to(std::string((char*)data, size), endpoint, std::move(cb));
   }
 
+  /**
+   * connect to server, for `@send` api
+   *
+   * @param endpoint
+   */
   void connect(const endpoint& endpoint) {
     socket_.connect(endpoint);
   }

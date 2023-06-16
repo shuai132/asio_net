@@ -25,6 +25,7 @@ class tcp_channel_t : private noncopyable {
     asio_net_LOGD("~tcp_channel: %p", this);
   }
 
+ protected:
   void init_socket() {
     if (config_.max_send_buffer_size != UINT32_MAX) {
       asio::socket_base::send_buffer_size option(config_.max_send_buffer_size);
@@ -36,10 +37,23 @@ class tcp_channel_t : private noncopyable {
     }
   }
 
+ public:
+  /**
+   * async send message
+   * 1. will close if error occur, e.g. msg.size() > max_body_size
+   * 2. will block wait if send buffer > max_send_buffer_size
+   * 3. not threadsafe, only can be used on io_context thread
+   *
+   * @param msg can be string or binary
+   */
   void send(std::string msg) {
     do_write(std::move(msg));
   }
 
+  /**
+   * close socket, threadsafe
+   * will trigger @see`on_close` if opened
+   */
   void close() {
     asio::post(socket_.get_executor(), [this] {
       do_close();
