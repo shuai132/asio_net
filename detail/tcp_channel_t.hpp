@@ -25,6 +25,17 @@ class tcp_channel_t : private noncopyable {
     asio_net_LOGD("~tcp_channel: %p", this);
   }
 
+  void init_socket() {
+    if (config_.max_send_buffer_size != UINT32_MAX) {
+      asio::socket_base::send_buffer_size option(config_.max_send_buffer_size);
+      socket_.set_option(option);
+    }
+    if (config_.max_recv_buffer_size != UINT32_MAX) {
+      asio::socket_base::receive_buffer_size option(config_.max_send_buffer_size);
+      socket_.set_option(option);
+    }
+  }
+
   void send(std::string msg) {
     do_write(std::move(msg));
   }
@@ -112,12 +123,24 @@ class tcp_channel_t : private noncopyable {
       do_close();
     }
 
+    if (keeper->length > config_.max_send_buffer_size) {
+      asio_net_LOGE("write: body size=%u > max_send_buffer_size=%u", keeper->length, config_.max_send_buffer_size);
+      do_close();
+    }
+
+    // block wait send_buffer idle
+    while (keeper->length + send_buffer_now_ > config_.max_send_buffer_size) {
+      static_cast<asio::io_context*>(&socket_.get_executor().context())->run_one();
+    }
+
     std::vector<asio::const_buffer> buffer;
     if (config_.auto_pack) {
       buffer.emplace_back(&keeper->length, sizeof(keeper->length));
     }
     buffer.emplace_back(asio::buffer(keeper->body));
+    send_buffer_now_ += keeper->body.size();
     asio::async_write(socket_, buffer, [this, keeper = std::move(keeper)](const std::error_code& ec, std::size_t /*length*/) {
+      send_buffer_now_ -= keeper->body.size();
       if (ec) {
         do_close();
       }
@@ -138,6 +161,7 @@ class tcp_channel_t : private noncopyable {
   socket& socket_;
   const Config& config_;
   detail::message read_msg_;
+  uint32_t send_buffer_now_ = 0;
 };
 
 }  // namespace detail

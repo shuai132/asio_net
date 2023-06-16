@@ -14,7 +14,9 @@ class tcp_session_t : public tcp_channel_t<T>, public std::enable_shared_from_th
   using socket = typename T::socket;
 
  public:
-  explicit tcp_session_t(socket socket, const Config& config) : tcp_channel_t<T>(socket_, config), socket_(std::move(socket)) {}
+  explicit tcp_session_t(socket socket, const Config& config) : tcp_channel_t<T>(socket_, config), socket_(std::move(socket)) {
+    this->init_socket();
+  }
 
   void start() {
     tcp_channel_t<T>::do_read_start(tcp_session_t<T>::shared_from_this());

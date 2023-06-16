@@ -25,6 +25,7 @@ class tcp_client_t : public tcp_channel_t<T> {
                         if (!ec) {
                           asio::async_connect(socket_, endpoints, [this](const std::error_code& ec, const endpoint&) {
                             if (!ec) {
+                              this->init_socket();
                               if (on_open) on_open();
                               this->do_read_start();
                             } else {
