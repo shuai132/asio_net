@@ -12,9 +12,9 @@ struct Config {
   uint32_t max_recv_buffer_size = UINT32_MAX;
 
   void init() {
-    if (auto_pack) {
-      max_body_size = std::min<uint32_t>(1024, max_body_size);
-      max_body_size = std::max<uint32_t>(32, max_body_size);
+    // when auto_pack disable, max_body_size means buffer size, default is 1024 bytes
+    if ((!auto_pack) && (max_body_size == UINT32_MAX)) {
+      max_body_size = 1024;
     }
   }
 };
