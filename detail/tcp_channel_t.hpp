@@ -1,5 +1,6 @@
 #pragma once
 
+#include <deque>
 #include <utility>
 
 #include "asio.hpp"
@@ -27,12 +28,12 @@ class tcp_channel_t : private noncopyable {
 
  protected:
   void init_socket() {
-    if (config_.max_send_buffer_size != UINT32_MAX) {
-      asio::socket_base::send_buffer_size option(config_.max_send_buffer_size);
+    if (config_.socket_send_buffer_size != UINT32_MAX) {
+      asio::socket_base::send_buffer_size option(config_.socket_send_buffer_size);
       socket_.set_option(option);
     }
-    if (config_.max_recv_buffer_size != UINT32_MAX) {
-      asio::socket_base::receive_buffer_size option(config_.max_send_buffer_size);
+    if (config_.socket_recv_buffer_size != UINT32_MAX) {
+      asio::socket_base::receive_buffer_size option(config_.socket_recv_buffer_size);
       socket_.set_option(option);
     }
   }
@@ -90,8 +91,9 @@ class tcp_channel_t : private noncopyable {
  private:
   void do_read_header(std::shared_ptr<tcp_channel_t> self) {
     asio::async_read(socket_, asio::buffer(&read_msg_.length, sizeof(read_msg_.length)),
-                     [this, self = std::move(self)](const std::error_code& ec, std::size_t /*length*/) mutable {
-                       if (ec) {
+                     [this, self = std::move(self)](const std::error_code& ec, std::size_t size) mutable {
+                       if (ec || size == 0) {
+                         asio_net_LOGV("do_read_header: %s, size: %zu", ec.message().c_str(), size);
                          do_close();
                          return;
                        }
@@ -106,14 +108,15 @@ class tcp_channel_t : private noncopyable {
 
   void do_read_body(std::shared_ptr<tcp_channel_t> self) {
     read_msg_.body.resize(read_msg_.length);
-    asio::async_read(socket_, asio::buffer(read_msg_.body), [this, self = std::move(self)](const std::error_code& ec, std::size_t) mutable {
-      if (!ec) {
+    asio::async_read(socket_, asio::buffer(read_msg_.body), [this, self = std::move(self)](const std::error_code& ec, std::size_t size) mutable {
+      if (ec || size == 0) {
+        asio_net_LOGV("do_read_body: %s, size: %zu", ec.message().c_str(), size);
+        do_close();
+      } else {
         auto msg = std::move(read_msg_.body);
         read_msg_.clear();
         if (on_data) on_data(std::move(msg));
         do_read_header(std::move(self));
-      } else {
-        do_close();
       }
     });
   }
@@ -131,37 +134,56 @@ class tcp_channel_t : private noncopyable {
   }
 
   void do_write(std::string msg) {
-    auto keeper = std::make_unique<detail::message>(std::move(msg));
-    if (config_.auto_pack && keeper->length > config_.max_body_size) {
-      asio_net_LOGE("write: body size=%u > max_body_size=%u", keeper->length, config_.max_body_size);
+    if (config_.auto_pack && msg.size() > config_.max_body_size) {
+      asio_net_LOGE("write: body size=%zu > max_body_size=%u", msg.size(), config_.max_body_size);
       do_close();
     }
 
-    if (keeper->length > config_.max_send_buffer_size) {
-      asio_net_LOGE("write: body size=%u > max_send_buffer_size=%u", keeper->length, config_.max_send_buffer_size);
+    if (msg.size() > config_.max_send_buffer_size) {
+      asio_net_LOGE("write: body size=%zu > max_send_buffer_size=%u", msg.size(), config_.max_send_buffer_size);
       do_close();
     }
 
     // block wait send_buffer idle
-    while (keeper->length + send_buffer_now_ > config_.max_send_buffer_size) {
+    while (msg.size() + send_buffer_now_ > config_.max_send_buffer_size) {
+      asio_net_LOGV("block wait send_buffer idle");
       static_cast<asio::io_context*>(&socket_.get_executor().context())->run_one();
     }
 
+    // queue for asio::async_write
+    if (async_writing_) {
+      asio_net_LOGV("queue for asio::async_write");
+      write_msg_queue_.emplace_back(std::move(msg));
+      return;
+    }
+
+    auto keeper = std::make_unique<detail::message>(std::move(msg));
     std::vector<asio::const_buffer> buffer;
     if (config_.auto_pack) {
       buffer.emplace_back(&keeper->length, sizeof(keeper->length));
     }
     buffer.emplace_back(asio::buffer(keeper->body));
     send_buffer_now_ += keeper->body.size();
+    async_writing_ = true;
     asio::async_write(socket_, buffer, [this, keeper = std::move(keeper)](const std::error_code& ec, std::size_t /*length*/) {
+      async_writing_ = false;
       send_buffer_now_ -= keeper->body.size();
       if (ec) {
         do_close();
+      }
+
+      if (!write_msg_queue_.empty()) {
+        asio::post(socket_.get_executor(), [this, msg = std::move(write_msg_queue_.front())]() mutable {
+          do_write(std::move(msg));
+        });
+        write_msg_queue_.pop_front();
       }
     });
   }
 
   void do_close() {
+    reset_data();
+
     if (!is_open()) return;
     asio::error_code ec;
     socket_.close(ec);
@@ -171,11 +193,20 @@ class tcp_channel_t : private noncopyable {
     if (on_close) on_close();
   }
 
+  void reset_data() {
+    read_msg_.clear();
+    send_buffer_now_ = 0;
+    async_writing_ = false;
+    write_msg_queue_.clear();
+  }
+
  private:
   socket& socket_;
   const Config& config_;
   detail::message read_msg_;
   uint32_t send_buffer_now_ = 0;
+  bool async_writing_ = false;
+  std::deque<std::string> write_msg_queue_;
 };
 
 }  // namespace detail
