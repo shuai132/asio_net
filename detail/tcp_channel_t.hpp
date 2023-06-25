@@ -48,7 +48,7 @@ class tcp_channel_t : private noncopyable {
    * @param msg can be string or binary
    */
   void send(std::string msg) {
-    do_write(std::move(msg));
+    do_write(std::move(msg), false);
   }
 
   /**
@@ -133,7 +133,7 @@ class tcp_channel_t : private noncopyable {
     });
   }
 
-  void do_write(std::string msg) {
+  void do_write(std::string msg, bool from_queue) {
     if (config_.auto_pack && msg.size() > config_.max_body_size) {
       asio_net_LOGE("write: body size=%zu > max_body_size=%u", msg.size(), config_.max_body_size);
       do_close();
@@ -151,10 +151,14 @@ class tcp_channel_t : private noncopyable {
     }
 
     // queue for asio::async_write
-    if (async_writing_) {
+    if (!from_queue && send_buffer_now_ != 0) {
       asio_net_LOGV("queue for asio::async_write");
+      send_buffer_now_ += msg.size();
       write_msg_queue_.emplace_back(std::move(msg));
       return;
+    }
+    if (!from_queue) {
+      send_buffer_now_ += msg.size();
     }
 
     auto keeper = std::make_unique<detail::message>(std::move(msg));
@@ -163,10 +167,7 @@ class tcp_channel_t : private noncopyable {
       buffer.emplace_back(&keeper->length, sizeof(keeper->length));
     }
     buffer.emplace_back(asio::buffer(keeper->body));
-    send_buffer_now_ += keeper->body.size();
-    async_writing_ = true;
     asio::async_write(socket_, buffer, [this, keeper = std::move(keeper)](const std::error_code& ec, std::size_t /*length*/) {
-      async_writing_ = false;
       send_buffer_now_ -= keeper->body.size();
       if (ec) {
         do_close();
@@ -174,7 +175,7 @@ class tcp_channel_t : private noncopyable {
 
       if (!write_msg_queue_.empty()) {
         asio::post(socket_.get_executor(), [this, msg = std::move(write_msg_queue_.front())]() mutable {
-          do_write(std::move(msg));
+          do_write(std::move(msg), true);
         });
         write_msg_queue_.pop_front();
       }
@@ -196,7 +197,6 @@ class tcp_channel_t : private noncopyable {
   void reset_data() {
     read_msg_.clear();
     send_buffer_now_ = 0;
-    async_writing_ = false;
     write_msg_queue_.clear();
   }
 
@@ -205,7 +205,6 @@ class tcp_channel_t : private noncopyable {
   const Config& config_;
   detail::message read_msg_;
   uint32_t send_buffer_now_ = 0;
-  bool async_writing_ = false;
   std::deque<std::string> write_msg_queue_;
 };
 
