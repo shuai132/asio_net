@@ -37,6 +37,7 @@ if (asio_net_BUILD_TEST)
     endif ()
 
     add_executable(${PROJECT_NAME}_test_tcp test/tcp.cpp)
+    add_executable(${PROJECT_NAME}_test_tcp_bigdata test/tcp_bigdata.cpp)
     add_executable(${PROJECT_NAME}_test_udp test/udp.cpp)
     add_executable(${PROJECT_NAME}_test_server_discovery test/server_discovery.cpp)
 

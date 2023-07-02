@@ -201,7 +201,7 @@ return ss.str();
 #endif
 
 #if defined(asio_net_LOG_SHOW_VERBOSE)
-#define asio_net_LOGV(fmt, ...)          do{ asio_net_LOG_PRINTF_IMPL(asio_net_LOG_COLOR_DEFAULT "[V]: %s: "         fmt asio_net_LOG_END, asio_net_LOG_BASE_FILENAME, ##__VA_ARGS__); } while(0)
+#define asio_net_LOGV(fmt, ...)          do{ asio_net_LOG_PRINTF_IMPL(asio_net_LOG_COLOR_DEFAULT asio_net_LOG_TIME_LABEL asio_net_LOG_THREAD_LABEL "[V]: %s:%d "       fmt asio_net_LOG_END asio_net_LOG_TIME_VALUE asio_net_LOG_THREAD_VALUE, asio_net_LOG_BASE_FILENAME, __LINE__, ##__VA_ARGS__); } while(0)
 #else
 #define asio_net_LOGV(fmt, ...)          ((void)0)
 #endif

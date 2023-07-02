@@ -33,6 +33,11 @@ jobs:
           cd build
           ./asio_net_test_tcp
 
+      - name: Test TCP (big data)
+        run: |
+          cd build
+          ./asio_net_test_tcp_bigdata
+
       - name: Test UDP
         run: |
           cd build
