@@ -23,6 +23,7 @@ class rpc_client_t : noncopyable {
       session->on_close = [this] {
         client_->on_data = nullptr;
         if (on_close) on_close();
+        client_->check_reconnect();
       };
 
       if (on_open) on_open(session->rpc);
@@ -33,18 +34,34 @@ class rpc_client_t : noncopyable {
     };
   }
 
-  void open(const std::string& ip, uint16_t port) {
+  void open(std::string ip, uint16_t port) {
     static_assert(std::is_same<T, asio::ip::tcp>::value, "");
-    client_->open(ip, port);
+    client_->open(std::move(ip), port);
   }
 
-  void open(const std::string& endpoint) {
+  void open(std::string endpoint) {
     static_assert(std::is_same<T, asio::local::stream_protocol>::value, "");
-    client_->open(endpoint);
+    client_->open(std::move(endpoint));
   }
 
   void close() {
     client_->close();
+  }
+
+  void set_reconnect(uint32_t ms) {
+    client_->set_reconnect(ms);
+  }
+
+  void cancel_reconnect() {
+    client_->cancel_reconnect();
+  }
+
+  void run() {
+    client_->run();
+  }
+
+  void stop() {
+    client_->stop();
   }
 
  public:

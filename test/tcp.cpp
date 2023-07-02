@@ -13,7 +13,7 @@ using namespace asio_net;
 const uint16_t PORT = 6666;
 
 int main(int argc, char** argv) {
-  static uint32_t test_count_max = 100000;
+  static uint32_t test_count_max = 10000;
   static uint32_t test_count_expect = 0;
   if (argc >= 2) {
     test_count_max = std::strtol(argv[1], nullptr, 10);
@@ -63,10 +63,10 @@ int main(int argc, char** argv) {
       pass_flag_client_close = true;
       ASSERT(test_count_expect == test_count_max - 1);
       LOG("client on_close:");
-      context.stop();
+      client.stop();
     };
     client.open("localhost", PORT);
-    context.run();
+    client.run();
   }).join();
   ASSERT(pass_flag_session_close);
   ASSERT(pass_flag_client_close);

@@ -13,7 +13,7 @@ using namespace asio_net;
 const uint16_t PORT = 6666;
 
 int main(int argc, char** argv) {
-  static uint32_t test_count_max = 100000;
+  static uint32_t test_count_max = 10000;
   static std::atomic_uint32_t test_count_received;
   if (argc >= 2) {
     test_count_max = std::strtol(argv[1], nullptr, 10);

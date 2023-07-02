@@ -58,10 +58,10 @@ int main(int argc, char** argv) {
     client.on_close = [&] {
       pass_flag_client_close = true;
       LOG("client on_close:");
-      context.stop();
+      client.stop();
     };
     client.open("localhost", PORT);
-    context.run();
+    client.run();
   }).join();
 
   ASSERT(pass_flag_rpc_pass);

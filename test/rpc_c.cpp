@@ -23,6 +23,6 @@ int main(int argc, char** argv) {
     LOG("client on_close:");
   };
   client.open("localhost", PORT);
-  context.run();
+  client.run();
   return 0;
 }

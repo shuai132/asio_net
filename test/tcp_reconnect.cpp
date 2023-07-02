@@ -20,16 +20,13 @@ int main(int argc, char** argv) {
     server.on_session = [&](const std::weak_ptr<tcp_session>& ws) {
       LOG("on_session:");
       auto session = ws.lock();
+      session->close();
       session->on_close = [] {
         LOG("session on_close:");
       };
-      session->on_data = [ws, &context](const std::string& data) {
+      session->on_data = [ws](const std::string& data) {
         ASSERT(!ws.expired());
         LOG("session on_data: %s", data.c_str());
-        static int count = 0;
-        if (++count == 3) {
-          context.stop();
-        }
       };
     };
     server.start(true);
@@ -42,12 +39,6 @@ int main(int argc, char** argv) {
     client.on_open = [&] {
       LOG("client on_open:");
       std::string msg("hello");
-      msg.resize(1024 * 1024 * 100);
-      LOG("send...");
-      client.send(msg);
-      LOG("send...");
-      client.send(msg);
-      LOG("send...");
       client.send(msg);
     };
     client.on_data = [&](const std::string& data) {
@@ -55,8 +46,12 @@ int main(int argc, char** argv) {
     };
     client.on_close = [&] {
       LOG("client on_close:");
-      client.stop();
+      static int count = 0;
+      if (++count == 3) {
+        client.stop();
+      }
     };
+    client.set_reconnect(1);
     client.open("localhost", PORT);
     client.run();
   }).join();

@@ -38,6 +38,11 @@ jobs:
           cd build
           ./asio_net_test_tcp_bigdata
 
+      - name: Test TCP (reconnect)
+        run: |
+          cd build
+          ./asio_net_test_tcp_reconnect
+
       - name: Test UDP
         run: |
           cd build
@@ -47,6 +52,11 @@ jobs:
         run: |
           cd build
           ./asio_net_test_rpc
+
+      - name: Test RPC (reconnect)
+        run: |
+          cd build
+          ./asio_net_test_rpc_reconnect
 
       - name: Test Domain TCP
         run: |

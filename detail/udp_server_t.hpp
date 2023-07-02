@@ -15,7 +15,7 @@ class udp_server_t : private noncopyable {
 
  public:
   udp_server_t(asio::io_context& io_context, short port, uint16_t max_length = 4096)
-      : socket_(io_context, typename T::endpoint(T::v4(), port)), max_length_(max_length) {
+      : io_context_(io_context), socket_(io_context, typename T::endpoint(T::v4(), port)), max_length_(max_length) {
     data_.resize(max_length);
     do_receive();
   }
@@ -28,9 +28,13 @@ class udp_server_t : private noncopyable {
    * @param max_length
    */
   udp_server_t(asio::io_context& io_context, const std::string& endpoint, uint16_t max_length = 4096)
-      : socket_(io_context, typename T::endpoint(endpoint)), max_length_(max_length) {
+      : io_context_(io_context), socket_(io_context, typename T::endpoint(endpoint)), max_length_(max_length) {
     data_.resize(max_length);
     do_receive();
+  }
+
+  void start() {
+    io_context_.run();
   }
 
   std::function<void(uint8_t* data, size_t size, endpoint from)> on_data;
@@ -48,6 +52,7 @@ class udp_server_t : private noncopyable {
   }
 
  private:
+  asio::io_context& io_context_;
   socket socket_;
   endpoint from_endpoint_;
   uint16_t max_length_;
