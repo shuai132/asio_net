@@ -36,6 +36,9 @@ if (asio_net_BUILD_TEST)
         add_definitions(-Dasio_net_DISABLE_ON_DATA_PRINT)
     endif ()
 
+    # for android standalone e.g. termux
+    add_definitions(-DANDROID_STANDALONE)
+
     add_executable(${PROJECT_NAME}_test_tcp test/tcp.cpp)
     add_executable(${PROJECT_NAME}_test_tcp_bigdata test/tcp_bigdata.cpp)
     add_executable(${PROJECT_NAME}_test_tcp_reconnect test/tcp_reconnect.cpp)

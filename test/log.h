@@ -81,7 +81,7 @@
 
 #define LOG_WITH_COLOR
 
-#if defined(_WIN32) || defined(__ANDROID__) || defined(LOG_FOR_MCU)
+#if defined(_WIN32) || (defined(__ANDROID__) && !defined(ANDROID_STANDALONE)) || defined(LOG_FOR_MCU)
 #undef LOG_WITH_COLOR
 #endif
 
@@ -111,7 +111,7 @@
 
 #define LOG_END                 LOG_COLOR_END LOG_LINE_END
 
-#if __ANDROID__
+#if defined(__ANDROID__) && !defined(ANDROID_STANDALONE)
 #include <android/log.h>
 #define LOG_PRINTF(...)         __android_log_print(ANDROID_L##OG_DEBUG, "LOG", __VA_ARGS__)
 #else
@@ -163,6 +163,7 @@ return ss.str();
 #endif
 
 #ifdef LOG_ENABLE_DATE_TIME
+#include <chrono>
 #include <sstream>
 #include <iomanip>
 namespace LOG {
@@ -200,7 +201,7 @@ return ss.str();
 #endif
 
 #if defined(LOG_SHOW_VERBOSE)
-#define LOGV(fmt, ...)          do{ LOG_PRINTF_IMPL(LOG_COLOR_DEFAULT "[V]: %s: "         fmt LOG_END, LOG_BASE_FILENAME, ##__VA_ARGS__); } while(0)
+#define LOGV(fmt, ...)          do{ LOG_PRINTF_IMPL(LOG_COLOR_DEFAULT LOG_TIME_LABEL LOG_THREAD_LABEL "[V]: %s:%d "       fmt LOG_END LOG_TIME_VALUE LOG_THREAD_VALUE, LOG_BASE_FILENAME, __LINE__, ##__VA_ARGS__); } while(0)
 #else
 #define LOGV(fmt, ...)          ((void)0)
 #endif

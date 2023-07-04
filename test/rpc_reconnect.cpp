@@ -3,7 +3,6 @@
 #include <cstdlib>
 #include <thread>
 
-#include "assert_def.h"
 #include "log.h"
 #include "rpc_client.hpp"
 #include "rpc_server.hpp"
@@ -39,8 +38,8 @@ int main(int argc, char** argv) {
         client.stop();
       }
     };
-    client.open("localhost", PORT);
     client.set_reconnect(1);
+    client.open("localhost", PORT);
     client.run();
   }).join();
   return EXIT_SUCCESS;

@@ -81,7 +81,7 @@
 
 #define asio_net_LOG_WITH_COLOR
 
-#if defined(_WIN32) || defined(__ANDROID__) || defined(asio_net_LOG_FOR_MCU)
+#if defined(_WIN32) || (defined(__ANDROID__) && !defined(ANDROID_STANDALONE)) || defined(asio_net_LOG_FOR_MCU)
 #undef asio_net_LOG_WITH_COLOR
 #endif
 
@@ -111,7 +111,7 @@
 
 #define asio_net_LOG_END                 asio_net_LOG_COLOR_END asio_net_LOG_LINE_END
 
-#if __ANDROID__
+#if defined(__ANDROID__) && !defined(ANDROID_STANDALONE)
 #include <android/log.h>
 #define asio_net_LOG_PRINTF(...)         __android_log_print(ANDROID_L##OG_DEBUG, "asio_net_LOG", __VA_ARGS__)
 #else
