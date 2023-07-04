@@ -46,11 +46,12 @@ class rpc_session_t : noncopyable, public std::enable_shared_from_this<rpc_sessi
     };
 
     // bind rpc_session lifecycle to tcp_session and end with on_close
-    tcp_session->on_close = [rpc_session = this->shared_from_this()]() mutable {
+    tcp_session->on_close = [this, rpc_session = this->shared_from_this()]() mutable {
       if (rpc_session->on_close) {
         rpc_session->on_close();
       }
-      rpc_session = nullptr;
+      // post delay destroy rpc_session
+      io_context_.post([rpc_session = std::move(rpc_session)] {});
     };
 
     tcp_session->on_data = [this](std::string data) {

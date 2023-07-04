@@ -52,13 +52,11 @@ class tcp_channel_t : private noncopyable {
   }
 
   /**
-   * close socket, threadsafe
+   * close socket
    * will trigger @see`on_close` if opened
    */
   void close() {
-    asio::post(socket_.get_executor(), [this] {
-      do_close();
-    });
+    do_close();
   }
 
   bool is_open() const {
