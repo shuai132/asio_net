@@ -11,7 +11,7 @@ and [RpcCore](https://github.com/shuai132/RpcCore)
 * TCP/UDP support, rely on: [ASIO](http://think-async.com/Asio/)
 * RPC support, rely on: [RpcCore](https://github.com/shuai132/RpcCore)
 * Service discovery based on UDP multicast
-* Domain sockets support
+* Domain socket and rpc support
 * Comprehensive unittests
 
 Options:
@@ -63,7 +63,7 @@ By default, this feature is disabled.
   client.on_close = [] {
   };
   client.open("localhost", PORT);
-  context.run();
+  client.run();
 ```
 
 * UDP
@@ -74,7 +74,7 @@ By default, this feature is disabled.
   udp_server server(context, PORT);
   server.on_data = [](uint8_t* data, size_t size, const udp::endpoint& from) {
   };
-  context.run();
+  server.start();
 ```
 
 ```c++
@@ -117,7 +117,7 @@ By default, this feature is disabled.
   client.on_close = [] {
   };
   client.open("localhost", PORT);
-  context.run();
+  client.run();
 ```
 
 * Server Discovery

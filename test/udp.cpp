@@ -28,7 +28,7 @@ int main(int argc, char** argv) {
 #endif
       test_count_received++;
     };
-    context.run();
+    server.start();
   }).detach();
 
   std::atomic_uint32_t send_failed_count{0};

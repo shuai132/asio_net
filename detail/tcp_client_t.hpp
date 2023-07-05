@@ -114,6 +114,9 @@ class tcp_client_t : public tcp_channel_t<T> {
         check_reconnect();
       };
       if (on_open) on_open();
+      if (reconnect_timer_) {
+        reconnect_timer_->cancel();
+      }
       this->do_read_start();
     } else {
       if (on_open_failed) on_open_failed(ec);
