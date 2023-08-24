@@ -20,7 +20,7 @@ target_include_directories(${PROJECT_NAME} INTERFACE .)
 
 if (asio_net_ENABLE_RPC)
     target_include_directories(${PROJECT_NAME} INTERFACE
-            rpc/RpcCore
+            rpc/rpc_core
             rpc
             )
 endif ()
@@ -52,7 +52,7 @@ if (asio_net_BUILD_TEST)
     add_executable(${PROJECT_NAME}_test_domain_udp test/domain_udp.cpp)
 
     if (asio_net_ENABLE_RPC)
-        add_compile_definitions(RpcCore_LOG_SHOW_DEBUG)
+        add_compile_definitions(RPC_CORE_LOG_SHOW_DEBUG)
         add_compile_definitions(asio_net_LOG_SHOW_DEBUG)
         add_executable(${PROJECT_NAME}_test_rpc test/rpc.cpp)
         add_executable(${PROJECT_NAME}_test_rpc_reconnect test/rpc_reconnect.cpp)

@@ -28,7 +28,7 @@ int main(int argc, char** argv) {
   std::thread([] {
     asio::io_context context;
     static rpc_client client(context);  // static for test session lifecycle
-    client.on_open = [&](const std::shared_ptr<RpcCore::Rpc>& rpc) {
+    client.on_open = [&](const std::shared_ptr<rpc_core::rpc>& rpc) {
       LOG("client on_open:");
     };
     client.on_close = [&] {

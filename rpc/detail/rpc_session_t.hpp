@@ -2,9 +2,9 @@
 
 #include <utility>
 
-#include "RpcCore.hpp"
 #include "detail/noncopyable.hpp"
 #include "detail/tcp_channel_t.hpp"
+#include "rpc_core.hpp"
 
 namespace asio_net {
 namespace detail {
@@ -25,9 +25,9 @@ class rpc_session_t : noncopyable, public std::enable_shared_from_this<rpc_sessi
     tcp_session_ = std::move(ws);
     auto tcp_session = tcp_session_.lock();
 
-    rpc = RpcCore::Rpc::create();
+    rpc = rpc_core::rpc::create();
 
-    rpc->setTimer([this](uint32_t ms, RpcCore::Rpc::TimeoutCb cb) {
+    rpc->set_timer([this](uint32_t ms, rpc_core::rpc::timeout_cb cb) {
       auto timer = std::make_shared<asio::steady_timer>(io_context_);
       timer->expires_after(std::chrono::milliseconds(ms));
       auto tp = timer.get();
@@ -36,7 +36,7 @@ class rpc_session_t : noncopyable, public std::enable_shared_from_this<rpc_sessi
       });
     });
 
-    rpc->getConn()->sendPackageImpl = [this](std::string data) {
+    rpc->get_connection()->send_package_impl = [this](std::string data) {
       auto tcp_session = tcp_session_.lock();
       if (tcp_session) {
         tcp_session->send(std::move(data));
@@ -57,7 +57,7 @@ class rpc_session_t : noncopyable, public std::enable_shared_from_this<rpc_sessi
     };
 
     tcp_session->on_data = [this](std::string data) {
-      rpc->getConn()->onRecvPackage(std::move(data));
+      rpc->get_connection()->on_recv_package(std::move(data));
     };
   }
 
@@ -72,7 +72,7 @@ class rpc_session_t : noncopyable, public std::enable_shared_from_this<rpc_sessi
   std::function<void()> on_close;
 
  public:
-  std::shared_ptr<RpcCore::Rpc> rpc;
+  std::shared_ptr<rpc_core::rpc> rpc;
 
  private:
   asio::io_context& io_context_;

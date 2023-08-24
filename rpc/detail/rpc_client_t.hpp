@@ -2,7 +2,7 @@
 
 #include <utility>
 
-#include "RpcCore.hpp"
+#include "rpc_core.hpp"
 #include "detail/noncopyable.hpp"
 #include "rpc_session.hpp"
 #include "tcp_client.hpp"
@@ -65,7 +65,7 @@ class rpc_client_t : noncopyable {
   }
 
  public:
-  std::function<void(std::shared_ptr<RpcCore::Rpc>)> on_open;
+  std::function<void(std::shared_ptr<rpc_core::rpc>)> on_open;
   std::function<void()> on_close;
   std::function<void(std::error_code)> on_open_failed;
 

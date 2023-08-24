@@ -16,7 +16,7 @@ int main(int argc, char** argv) {
     session->on_close = [rs] {
       LOG("session on_close: %p", rs.lock().get());
     };
-    session->rpc->subscribe("cmd", [](const RpcCore::String& data) -> RpcCore::String {
+    session->rpc->subscribe("cmd", [](const std::string& data) -> std::string {
       LOG("session on cmd: %s", data.c_str());
       return "world";
     });

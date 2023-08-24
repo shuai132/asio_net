@@ -3,13 +3,13 @@
 [![Build Status](https://github.com/shuai132/asio_net/workflows/build/badge.svg)](https://github.com/shuai132/asio_net/actions?workflow=build)
 
 a tiny Async TCP/UDP/RPC library based on [ASIO](http://think-async.com/Asio/)
-and [RpcCore](https://github.com/shuai132/RpcCore)
+and [rpc_core](https://github.com/shuai132/rpc_core)
 
 ## Features
 
 * Header-Only
 * TCP/UDP support, rely on: [ASIO](http://think-async.com/Asio/)
-* RPC support, rely on: [RpcCore](https://github.com/shuai132/RpcCore)
+* RPC support, rely on: [rpc_core](https://github.com/shuai132/rpc_core)
 * Service discovery based on UDP multicast
 * Domain socket and rpc support
 * Comprehensive unittests
@@ -96,7 +96,7 @@ By default, this feature is disabled.
     auto session = rs.lock();
     session->on_close = [] {
     };
-    session->rpc->subscribe("cmd", [](const RpcCore::String& data) -> RpcCore::String {
+    session->rpc->subscribe("cmd", [](const std::string& data) -> std::string {
       return "world";
     });
   };
@@ -107,10 +107,10 @@ By default, this feature is disabled.
   // client
   asio::io_context context;
   rpc_client client(context);
-  client.on_open = [](const std::shared_ptr<RpcCore::Rpc>& rpc) {
+  client.on_open = [](const std::shared_ptr<rpc_core::rpc>& rpc) {
     rpc->cmd("cmd")
-        ->msg(RpcCore::String("hello"))
-        ->rsp([](const RpcCore::String& data) {
+        ->msg(std::string("hello"))
+        ->rsp([](const std::string& data) {
         })
         ->call();
   };

@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
         LOG("session on_close:");
         pass_flag_session_close = true;
       };
-      session->rpc->subscribe("cmd", [](const RpcCore::String& data) -> RpcCore::String {
+      session->rpc->subscribe("cmd", [](const std::string& data) -> std::string {
         LOG("session on cmd: %s", data.c_str());
         ASSERT(data == "hello");
         return "world";
@@ -47,11 +47,11 @@ int main(int argc, char** argv) {
   std::thread([] {
     asio::io_context context;
     static domain_rpc_client client(context);  // static for test session lifecycle
-    client.on_open = [&](const std::shared_ptr<RpcCore::Rpc>& rpc) {
+    client.on_open = [&](const std::shared_ptr<rpc_core::rpc>& rpc) {
       LOG("client on_open:");
       rpc->cmd("cmd")
-          ->msg(RpcCore::String("hello"))
-          ->rsp([&](const RpcCore::String& data) {
+          ->msg(std::string("hello"))
+          ->rsp([&](const std::string& data) {
             LOG("cmd rsp: %s", data.c_str());
             if (data == "world") {
               pass_flag_rpc_pass = true;
