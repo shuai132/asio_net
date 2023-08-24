@@ -13,11 +13,11 @@ template <typename T>
 class rpc_session_t : noncopyable, public std::enable_shared_from_this<rpc_session_t<T>> {
  public:
   explicit rpc_session_t(asio::io_context& io_context) : io_context_(io_context) {
-    asio_net_LOGD("rpc_session: %p", this);
+    ASIO_NET_LOGD("rpc_session: %p", this);
   }
 
   ~rpc_session_t() {
-    asio_net_LOGD("~rpc_session: %p", this);
+    ASIO_NET_LOGD("~rpc_session: %p", this);
   }
 
  public:
@@ -41,7 +41,7 @@ class rpc_session_t : noncopyable, public std::enable_shared_from_this<rpc_sessi
       if (tcp_session) {
         tcp_session->send(std::move(data));
       } else {
-        asio_net_LOGW("tcp_session expired on sendPackage");
+        ASIO_NET_LOGW("tcp_session expired on sendPackage");
       }
     };
 

@@ -69,7 +69,7 @@ class tcp_server_t {
         if (on_session) on_session(session);
         do_accept();
       } else {
-        asio_net_LOGE("do_accept: %s", ec.message().c_str());
+        ASIO_NET_LOGE("do_accept: %s", ec.message().c_str());
       }
     });
   }

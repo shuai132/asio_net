@@ -25,7 +25,7 @@ jobs:
           ASIO_PATH: asio/asio/include
         run: |
           mkdir build && cd build
-          cmake -DCMAKE_BUILD_TYPE=Debug -Dasio_net_DISABLE_ON_DATA_PRINT=ON ..
+          cmake -DCMAKE_BUILD_TYPE=Debug -DASIO_NET_DISABLE_ON_DATA_PRINT=ON ..
           make -j2
 
       - name: Test TCP

@@ -41,7 +41,7 @@ class receiver {
       socket_.set_option(asio::ip::multicast::join_group(asio::ip::make_address(addr)));
       do_receive();
     } catch (const std::exception& e) {
-      asio_net_LOGE("receive: init err: %s", e.what());
+      ASIO_NET_LOGE("receive: init err: %s", e.what());
       auto timer = std::make_shared<asio::steady_timer>(socket_.get_executor());
       timer->expires_after(std::chrono::seconds(1));
       timer->async_wait([=](const std::error_code&) mutable {
@@ -73,7 +73,7 @@ class receiver {
         }
         do_receive();
       } else {
-        asio_net_LOGE("server_discovery: receive: err: %s", ec.message().c_str());
+        ASIO_NET_LOGE("server_discovery: receive: err: %s", ec.message().c_str());
       }
     });
   }
@@ -100,7 +100,7 @@ class sender {
   void do_send() {
     socket_.async_send_to(asio::buffer(message_), endpoint_, [this](const std::error_code& ec, std::size_t /*length*/) {
       if (ec) {
-        asio_net_LOGE("server_discovery: sender: err: %s", ec.message().c_str());
+        ASIO_NET_LOGE("server_discovery: sender: err: %s", ec.message().c_str());
       }
       do_send_next();
     });

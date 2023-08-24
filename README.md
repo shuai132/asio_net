@@ -2,13 +2,13 @@
 
 [![Build Status](https://github.com/shuai132/asio_net/workflows/build/badge.svg)](https://github.com/shuai132/asio_net/actions?workflow=build)
 
-a tiny Async TCP/UDP/RPC library based on [ASIO](http://think-async.com/Asio/)
+a tiny Async TCP/UDP/RPC library based on [asio](http://think-async.com/Asio/)
 and [rpc_core](https://github.com/shuai132/rpc_core)
 
 ## Features
 
 * Header-Only
-* TCP/UDP support, rely on: [ASIO](http://think-async.com/Asio/)
+* TCP/UDP support, rely on: [asio](http://think-async.com/Asio/)
 * RPC support, rely on: [rpc_core](https://github.com/shuai132/rpc_core)
 * Service discovery based on UDP multicast
 * Domain socket and rpc support
@@ -24,7 +24,7 @@ Options:
 ## Requirements
 
 * C++14
-* ASIO
+* asio
 
 ## Usage
 
