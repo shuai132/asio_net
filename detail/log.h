@@ -5,6 +5,7 @@
 // ASIO_NET_LOG_LINE_END_CRLF        默认是\n结尾 添加此宏将以\r\n结尾
 // ASIO_NET_LOG_FOR_MCU              更适用于MCU环境
 // ASIO_NET_LOG_NOT_EXIT_ON_FATAL    FATAL默认退出程序 添加此宏将不退出
+// ASIO_NET_LOG_DISABLE_ALL          关闭所有日志
 //
 // c++11环境默认打开以下内容
 // ASIO_NET_LOG_ENABLE_THREAD_SAFE   线程安全
@@ -37,6 +38,19 @@
 
 // 在库中使用时需取消注释
 #define ASIO_NET_LOG_IN_LIB
+
+#ifdef ASIO_NET_LOG_DISABLE_ALL
+
+#define ASIO_NET_LOG(fmt, ...)           ((void)0)
+#define ASIO_NET_LOGT(tag, fmt, ...)     ((void)0)
+#define ASIO_NET_LOGI(fmt, ...)          ((void)0)
+#define ASIO_NET_LOGW(fmt, ...)          ((void)0)
+#define ASIO_NET_LOGE(fmt, ...)          ((void)0)
+#define ASIO_NET_LOGF(fmt, ...)          ((void)0)
+#define ASIO_NET_LOGD(fmt, ...)          ((void)0)
+#define ASIO_NET_LOGV(fmt, ...)          ((void)0)
+
+#else
 
 #ifdef __cplusplus
 #include <cstring>
@@ -129,7 +143,10 @@
 #include <mutex>
 struct ASIO_NET_LOG_Mutex {
 static std::mutex& mutex() {
-static std::mutex mutex;
+// 1. never delete, avoid destroy before user log
+// 2. static memory, avoid memory fragmentation
+static char memory[sizeof(std::mutex)];
+static std::mutex& mutex = *(new (memory) std::mutex());
 return mutex;
 }
 };
@@ -204,4 +221,6 @@ return ss.str();
 #define ASIO_NET_LOGV(fmt, ...)          do{ ASIO_NET_LOG_PRINTF_IMPL(ASIO_NET_LOG_COLOR_DEFAULT ASIO_NET_LOG_TIME_LABEL ASIO_NET_LOG_THREAD_LABEL "[V]: %s:%d "       fmt ASIO_NET_LOG_END ASIO_NET_LOG_TIME_VALUE ASIO_NET_LOG_THREAD_VALUE, ASIO_NET_LOG_BASE_FILENAME, __LINE__, ##__VA_ARGS__); } while(0)
 #else
 #define ASIO_NET_LOGV(fmt, ...)          ((void)0)
+#endif
+
 #endif
