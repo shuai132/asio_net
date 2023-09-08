@@ -15,6 +15,7 @@ struct message : private noncopyable {
   void clear() {
     length = 0;
     body.clear();
+    body.shrink_to_fit();
   }
 
   uint32_t length{};

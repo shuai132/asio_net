@@ -176,6 +176,8 @@ class tcp_channel_t : private noncopyable {
           do_write(std::move(msg), true);
         });
         write_msg_queue_.pop_front();
+      } else {
+        write_msg_queue_.shrink_to_fit();
       }
     });
   }
@@ -196,6 +198,7 @@ class tcp_channel_t : private noncopyable {
     read_msg_.clear();
     send_buffer_now_ = 0;
     write_msg_queue_.clear();
+    write_msg_queue_.shrink_to_fit();
   }
 
  private:
