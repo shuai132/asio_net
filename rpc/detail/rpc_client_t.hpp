@@ -15,7 +15,7 @@ class rpc_client_t : noncopyable {
  public:
   explicit rpc_client_t(asio::io_context& io_context, uint32_t max_body_size = UINT32_MAX)
       : io_context_(io_context),
-        client_(std::make_shared<detail::tcp_client_t<T>>(io_context, Config{.auto_pack = true, .max_body_size = max_body_size})) {
+        client_(std::make_shared<detail::tcp_client_t<T>>(io_context, config{.auto_pack = true, .max_body_size = max_body_size})) {
     client_->on_open = [this]() {
       auto session = std::make_shared<rpc_session_t<T>>(io_context_);
       session->init(client_);

@@ -13,7 +13,7 @@ template <typename T>
 class rpc_server_t : noncopyable {
  public:
   rpc_server_t(asio::io_context& io_context, uint16_t port, uint32_t max_body_size = UINT32_MAX)
-      : io_context_(io_context), server_(io_context, port, Config{.auto_pack = true, .max_body_size = max_body_size}) {
+      : io_context_(io_context), server_(io_context, port, config{.auto_pack = true, .max_body_size = max_body_size}) {
     static_assert(std::is_same<T, asio::ip::tcp>::value, "");
     server_.on_session = [this](std::weak_ptr<detail::tcp_session_t<T>> ws) {
       auto session = std::make_shared<rpc_session_t<T>>(io_context_);
@@ -25,7 +25,7 @@ class rpc_server_t : noncopyable {
   }
 
   rpc_server_t(asio::io_context& io_context, const std::string& endpoint, uint32_t max_body_size = UINT32_MAX)
-      : io_context_(io_context), server_(io_context, endpoint, Config{.auto_pack = true, .max_body_size = max_body_size}) {
+      : io_context_(io_context), server_(io_context, endpoint, config{.auto_pack = true, .max_body_size = max_body_size}) {
     static_assert(std::is_same<T, asio::local::stream_protocol>::value, "");
     server_.on_session = [this](std::weak_ptr<detail::tcp_session_t<T>> ws) {
       auto session = std::make_shared<rpc_session_t<T>>(io_context_);

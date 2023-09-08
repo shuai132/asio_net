@@ -18,7 +18,7 @@ class tcp_channel_t : private noncopyable {
   using endpoint = typename T::endpoint;
 
  public:
-  tcp_channel_t(socket& socket, const Config& config) : socket_(socket), config_(config) {
+  tcp_channel_t(socket& socket, const config& config) : socket_(socket), config_(config) {
     ASIO_NET_LOGD("tcp_channel: %p", this);
   }
 
@@ -203,7 +203,7 @@ class tcp_channel_t : private noncopyable {
 
  private:
   socket& socket_;
-  const Config& config_;
+  const config& config_;
   detail::message read_msg_;
   uint32_t send_buffer_now_ = 0;
   std::deque<std::string> write_msg_queue_;

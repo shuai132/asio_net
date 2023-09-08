@@ -12,7 +12,7 @@ class tcp_client_t : public tcp_channel_t<T> {
   using endpoint = typename T::endpoint;
 
  public:
-  explicit tcp_client_t(asio::io_context& io_context, Config config = {})
+  explicit tcp_client_t(asio::io_context& io_context, config config = {})
       : tcp_channel_t<T>(socket_, config_), io_context_(io_context), socket_(io_context), config_(config) {
     config_.init();
   }
@@ -135,7 +135,7 @@ class tcp_client_t : public tcp_channel_t<T> {
  private:
   asio::io_context& io_context_;
   socket socket_;
-  Config config_;
+  config config_;
   std::unique_ptr<asio::steady_timer> reconnect_timer_;
   uint32_t reconnect_ms_ = 0;
   std::function<void()> open_;

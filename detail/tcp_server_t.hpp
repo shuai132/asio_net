@@ -14,7 +14,7 @@ class tcp_session_t : public tcp_channel_t<T>, public std::enable_shared_from_th
   using socket = typename T::socket;
 
  public:
-  explicit tcp_session_t(socket socket, const Config& config) : tcp_channel_t<T>(socket_, config), socket_(std::move(socket)) {
+  explicit tcp_session_t(socket socket, const config& config) : tcp_channel_t<T>(socket_, config), socket_(std::move(socket)) {
     this->init_socket();
   }
 
@@ -32,7 +32,7 @@ class tcp_server_t {
   using endpoint = typename T::endpoint;
 
  public:
-  tcp_server_t(asio::io_context& io_context, uint16_t port, Config config = {})
+  tcp_server_t(asio::io_context& io_context, uint16_t port, config config = {})
       : io_context_(io_context), acceptor_(io_context, endpoint(T::v4(), port)), config_(config) {
     config_.init();
   }
@@ -44,7 +44,7 @@ class tcp_server_t {
    * @param endpoint e.g. /tmp/foobar
    * @param config
    */
-  tcp_server_t(asio::io_context& io_context, const std::string& endpoint, Config config = {})
+  tcp_server_t(asio::io_context& io_context, const std::string& endpoint, config config = {})
       : io_context_(io_context), acceptor_(io_context, typename T::endpoint(endpoint)), config_(config) {
     config_.init();
   }
@@ -77,7 +77,7 @@ class tcp_server_t {
  private:
   asio::io_context& io_context_;
   typename T::acceptor acceptor_;
-  Config config_;
+  config config_;
 };
 
 }  // namespace detail
