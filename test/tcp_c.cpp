@@ -15,6 +15,9 @@ int main(int argc, char** argv) {
   client.on_data = [](const std::string& data) {
     LOG("client on_data: %s", data.c_str());
   };
+  client.on_open_failed = [](std::error_code ec) {
+    LOG("client on_open_failed: %d, %s", ec.value(), ec.message().c_str());
+  };
   client.on_close = [] {
     LOG("client on_close:");
   };

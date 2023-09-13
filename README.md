@@ -11,8 +11,9 @@ and [rpc_core](https://github.com/shuai132/rpc_core)
 * TCP/UDP support, rely on: [asio](http://think-async.com/Asio/)
 * RPC support, rely on: [rpc_core](https://github.com/shuai132/rpc_core)
 * Service discovery based on UDP multicast
-* Domain socket and rpc support
+* Domain socket and rpc support, compatible with IPv6
 * Comprehensive unittests
+* Automatic reconnection
 
 Options:
 

@@ -19,6 +19,9 @@ int main(int argc, char** argv) {
         })
         ->call();
   };
+  client.on_open_failed = [](std::error_code ec) {
+    LOG("client on_open_failed: %d, %s", ec.value(), ec.message().c_str());
+  };
   client.on_close = [] {
     LOG("client on_close:");
   };
