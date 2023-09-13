@@ -85,46 +85,6 @@ class tcp_server_t {
   template <socket_type>
   void do_accept();
 
-  template <>
-  void do_accept<socket_type::normal>() {
-    acceptor_.async_accept([this](const std::error_code& ec, socket socket) {
-      if (!ec) {
-        auto session = std::make_shared<tcp_session_t<T>>(std::move(socket), config_);
-        session->start();
-        if (on_session) on_session(session);
-        do_accept<T>();
-      } else {
-        ASIO_NET_LOGE("do_accept: %s", ec.message().c_str());
-      }
-    });
-  }
-
-  template <>
-  inline void do_accept<socket_type::domain>() {
-    do_accept<socket_type::normal>();
-  }
-
-#ifdef ASIO_NET_ENABLE_SSL
-  template <>
-  void do_accept<socket_type::ssl>() {
-    acceptor_.async_accept([this](const std::error_code& ec, asio::ip::tcp::socket socket) {
-      if (!ec) {
-        auto session = std::make_shared<tcp_session_t<T>>(typename socket_impl<T>::socket(std::move(socket), ssl_context_), config_);
-        session->async_handshake([this, session](const std::error_code& error) {
-          if (!error) {
-            if (on_session) on_session(session);
-          } else {
-            if (on_handshake_error) on_handshake_error(error);
-          }
-        });
-        do_accept<T>();
-      } else {
-        ASIO_NET_LOGE("do_accept: %s", ec.message().c_str());
-      }
-    });
-  }
-#endif
-
  private:
   asio::io_context& io_context_;
 #ifdef ASIO_NET_ENABLE_SSL
@@ -133,6 +93,59 @@ class tcp_server_t {
   typename socket_impl<T>::acceptor acceptor_;
   config config_;
 };
+
+template <>
+template <>
+void tcp_server_t<socket_type::normal>::do_accept<socket_type::normal>() {
+  acceptor_.async_accept([this](const std::error_code& ec, socket socket) {
+    if (!ec) {
+      auto session = std::make_shared<tcp_session_t<socket_type::normal>>(std::move(socket), config_);
+      session->start();
+      if (on_session) on_session(session);
+      tcp_server_t<socket_type::normal>::do_accept<socket_type::normal>();
+    } else {
+      ASIO_NET_LOGE("do_accept: %s", ec.message().c_str());
+    }
+  });
+}
+
+template <>
+template <>
+void tcp_server_t<socket_type::domain>::do_accept<socket_type::domain>() {
+  acceptor_.async_accept([this](const std::error_code& ec, socket socket) {
+    if (!ec) {
+      auto session = std::make_shared<tcp_session_t<socket_type::domain>>(std::move(socket), config_);
+      session->start();
+      if (on_session) on_session(session);
+      tcp_server_t<socket_type::domain>::do_accept<socket_type::domain>();
+    } else {
+      ASIO_NET_LOGE("do_accept: %s", ec.message().c_str());
+    }
+  });
+}
+
+#ifdef ASIO_NET_ENABLE_SSL
+template <>
+template <>
+void tcp_server_t<socket_type::ssl>::do_accept<socket_type::ssl>() {
+  acceptor_.async_accept([this](const std::error_code& ec, asio::ip::tcp::socket socket) {
+    if (!ec) {
+      using ssl_stream = typename socket_impl<socket_type::ssl>::socket;
+      auto session = std::make_shared<tcp_session_t<socket_type::ssl>>(ssl_stream(std::move(socket), ssl_context_), config_);
+      session->async_handshake([this, session](const std::error_code& error) {
+        if (!error) {
+          if (on_session) on_session(session);
+        } else {
+          if (on_handshake_error) on_handshake_error(error);
+        }
+      });
+      do_accept<socket_type::ssl>();
+    } else {
+      ASIO_NET_LOGE("do_accept: %s", ec.message().c_str());
+    }
+  });
+}
+#endif
 
 }  // namespace detail
 }  // namespace asio_net

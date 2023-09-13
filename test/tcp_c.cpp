@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
   client.on_close = [] {
     LOG("client on_close:");
   };
-  client.open("localhost", PORT);
+  client.open("::1", PORT);
   client.run();
   return 0;
 }
