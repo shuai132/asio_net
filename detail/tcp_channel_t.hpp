@@ -4,11 +4,11 @@
 #include <utility>
 
 #include "asio.hpp"
+#include "config.h"
 #include "log.h"
 #include "message.hpp"
 #include "noncopyable.hpp"
 #include "socket_type.hpp"
-#include "type.h"
 
 namespace asio_net {
 namespace detail {

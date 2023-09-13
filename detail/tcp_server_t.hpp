@@ -3,8 +3,8 @@
 #include <utility>
 
 #include "asio.hpp"
+#include "config.h"
 #include "tcp_channel_t.hpp"
-#include "type.h"
 
 namespace asio_net {
 namespace detail {
