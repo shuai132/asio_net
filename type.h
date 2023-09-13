@@ -7,6 +7,7 @@ namespace asio_net {
 
 struct config {
   bool auto_pack = false;
+  bool enable_ipv6 = false;
   uint32_t max_body_size = UINT32_MAX;
   uint32_t max_send_buffer_size = UINT32_MAX;
 

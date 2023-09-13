@@ -33,7 +33,7 @@ class tcp_server_t {
 
  public:
   tcp_server_t(asio::io_context& io_context, uint16_t port, config config = {})
-      : io_context_(io_context), acceptor_(io_context, endpoint(T::v4(), port)), config_(config) {
+      : io_context_(io_context), acceptor_(io_context, endpoint(config.enable_ipv6 ? T::v6() : T::v4(), port)), config_(config) {
     config_.init();
   }
 
