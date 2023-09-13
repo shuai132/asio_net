@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.5)
 project(asio_net CXX)
 
 option(ASIO_NET_ENABLE_RPC "" ON)
+option(ASIO_NET_ENABLE_SSL "" OFF)
 
 option(ASIO_NET_BUILD_TEST "" OFF)
 
@@ -17,6 +18,9 @@ add_compile_options(-Wall)
 
 add_library(${PROJECT_NAME} INTERFACE)
 target_include_directories(${PROJECT_NAME} INTERFACE .)
+if (ASIO_NET_ENABLE_SSL)
+    target_compile_definitions(${PROJECT_NAME} INTERFACE -DASIO_NET_ENABLE_SSL)
+endif ()
 
 if (ASIO_NET_ENABLE_RPC)
     target_include_directories(${PROJECT_NAME} INTERFACE
@@ -25,11 +29,17 @@ if (ASIO_NET_ENABLE_RPC)
             )
 endif ()
 
+if (ASIO_NET_ENABLE_SSL)
+    find_package(OpenSSL 1.1.0 REQUIRED)
+    target_link_libraries(${PROJECT_NAME} INTERFACE OpenSSL::SSL)
+endif ()
+
 if (ASIO_NET_BUILD_TEST)
     message(STATUS "ASIO_PATH: $ENV{ASIO_PATH}")
     include_directories($ENV{ASIO_PATH})
     link_libraries(${PROJECT_NAME})
     link_libraries(pthread)
+    add_definitions(-DOPENSSL_PEM_PATH=\"${CMAKE_CURRENT_LIST_DIR}/test/ssl/\")
 
     # for github actions/ci
     if (ASIO_NET_DISABLE_ON_DATA_PRINT)
@@ -50,6 +60,10 @@ if (ASIO_NET_BUILD_TEST)
     add_executable(${PROJECT_NAME}_test_server_discovery test/server_discovery.cpp)
     add_executable(${PROJECT_NAME}_test_domain_tcp test/domain_tcp.cpp)
     add_executable(${PROJECT_NAME}_test_domain_udp test/domain_udp.cpp)
+    if (ASIO_NET_ENABLE_SSL)
+        add_executable(${PROJECT_NAME}_test_tcp_ssl_c test/tcp_ssl_c.cpp)
+        add_executable(${PROJECT_NAME}_test_tcp_ssl_s test/tcp_ssl_s.cpp)
+    endif ()
 
     if (ASIO_NET_ENABLE_RPC)
         add_compile_definitions(RPC_CORE_LOG_SHOW_DEBUG)
@@ -60,5 +74,8 @@ if (ASIO_NET_BUILD_TEST)
         add_executable(${PROJECT_NAME}_test_rpc_s test/rpc_s.cpp)
         add_executable(${PROJECT_NAME}_test_rpc_c test/rpc_c.cpp)
         add_executable(${PROJECT_NAME}_test_domain_rpc test/domain_rpc.cpp)
+        if (ASIO_NET_ENABLE_SSL)
+            add_executable(${PROJECT_NAME}_test_rpc_ssl test/rpc_ssl.cpp)
+        endif ()
     endif ()
 endif ()

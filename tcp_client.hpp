@@ -4,7 +4,8 @@
 
 namespace asio_net {
 
-using tcp_client = detail::tcp_client_t<asio::ip::tcp>;
-using domain_tcp_client = detail::tcp_client_t<asio::local::stream_protocol>;
+using tcp_client = detail::tcp_client_t<detail::socket_type::normal>;
+using tcp_client_ssl = detail::tcp_client_t<detail::socket_type::ssl>;
+using domain_tcp_client = detail::tcp_client_t<detail::socket_type::domain>;
 
 }  // namespace asio_net

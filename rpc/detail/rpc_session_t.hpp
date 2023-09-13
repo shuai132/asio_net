@@ -9,7 +9,7 @@
 namespace asio_net {
 namespace detail {
 
-template <typename T>
+template <socket_type T>
 class rpc_session_t : noncopyable, public std::enable_shared_from_this<rpc_session_t<T>> {
  public:
   explicit rpc_session_t(asio::io_context& io_context) : io_context_(io_context) {

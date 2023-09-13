@@ -7,18 +7,16 @@
 #include "log.h"
 #include "message.hpp"
 #include "noncopyable.hpp"
+#include "socket_type.hpp"
 #include "type.h"
 
 namespace asio_net {
 namespace detail {
 
-template <typename T>
+template <socket_type T>
 class tcp_channel_t : private noncopyable {
-  using socket = typename T::socket;
-  using endpoint = typename T::endpoint;
-
  public:
-  tcp_channel_t(socket& socket, const config& config) : socket_(socket), config_(config) {
+  tcp_channel_t(typename socket_impl<T>::socket& socket, const config& config) : socket_(socket), config_(config) {
     ASIO_NET_LOGD("tcp_channel: %p", this);
   }
 
@@ -30,12 +28,16 @@ class tcp_channel_t : private noncopyable {
   void init_socket() {
     if (config_.socket_send_buffer_size != UINT32_MAX) {
       asio::socket_base::send_buffer_size option(config_.socket_send_buffer_size);
-      socket_.set_option(option);
+      get_socket().set_option(option);
     }
     if (config_.socket_recv_buffer_size != UINT32_MAX) {
       asio::socket_base::receive_buffer_size option(config_.socket_recv_buffer_size);
-      socket_.set_option(option);
+      get_socket().set_option(option);
     }
+  }
+
+  inline auto& get_socket() const {
+    return socket_.lowest_layer();
   }
 
  public:
@@ -60,14 +62,14 @@ class tcp_channel_t : private noncopyable {
   }
 
   bool is_open() const {
-    return socket_.is_open();
+    return get_socket().is_open();
   }
 
-  endpoint local_endpoint() {
+  typename socket_impl<T>::endpoint local_endpoint() {
     return socket_.local_endpoint();
   }
 
-  endpoint remote_endpoint() {
+  typename socket_impl<T>::endpoint remote_endpoint() {
     return socket_.remote_endpoint();
   }
 
@@ -187,7 +189,7 @@ class tcp_channel_t : private noncopyable {
 
     if (!is_open()) return;
     asio::error_code ec;
-    socket_.close(ec);
+    get_socket().close(ec);
     if (ec) {
       ASIO_NET_LOGW("do_close: %s", ec.message().c_str());
     }
@@ -202,7 +204,7 @@ class tcp_channel_t : private noncopyable {
   }
 
  private:
-  socket& socket_;
+  typename socket_impl<T>::socket& socket_;
   const config& config_;
   detail::message read_msg_;
   uint32_t send_buffer_now_ = 0;

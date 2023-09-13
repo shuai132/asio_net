@@ -6,16 +6,20 @@
 namespace asio_net {
 namespace detail {
 
-template <typename T>
+template <socket_type T>
 class tcp_client_t : public tcp_channel_t<T> {
-  using socket = typename T::socket;
-  using endpoint = typename T::endpoint;
-
  public:
   explicit tcp_client_t(asio::io_context& io_context, config config = {})
       : tcp_channel_t<T>(socket_, config_), io_context_(io_context), socket_(io_context), config_(config) {
     config_.init();
   }
+
+#ifdef ASIO_NET_ENABLE_SSL
+  explicit tcp_client_t(asio::io_context& io_context, asio::ssl::context& ssl_context, config config = {})
+      : tcp_channel_t<T>(socket_, config_), io_context_(io_context), socket_(io_context, ssl_context), config_(config) {
+    config_.init();
+  }
+#endif
 
   /**
    * connect to server
@@ -49,7 +53,7 @@ class tcp_client_t : public tcp_channel_t<T> {
 
   void set_reconnect(uint32_t ms) {
     reconnect_ms_ = ms;
-    reconnect_timer_ = std::make_unique<asio::steady_timer>(socket_.get_executor());
+    reconnect_timer_ = std::make_unique<asio::steady_timer>(io_context_);
   }
 
   void cancel_reconnect() {
@@ -83,30 +87,36 @@ class tcp_client_t : public tcp_channel_t<T> {
 
  private:
   void do_open(const std::string& host, uint16_t port) {
-    static_assert(std::is_same<asio::ip::tcp, T>::value, "");
-    auto resolver = std::make_unique<typename T::resolver>(socket_.get_executor());
+    static_assert(T == socket_type::normal || T == socket_type::ssl, "");
+    auto resolver = std::make_unique<typename socket_impl<T>::resolver>(io_context_);
     auto rp = resolver.get();
-    rp->async_resolve(typename T::resolver::query(host, std::to_string(port)),
-                      [this, resolver = std::move(resolver)](const std::error_code& ec, const typename T::resolver::results_type& endpoints) {
-                        if (!ec) {
-                          asio::async_connect(socket_, endpoints, [this](const std::error_code& ec, const endpoint&) {
-                            async_connect_handler(ec);
-                          });
-                        } else {
-                          if (on_open_failed) on_open_failed(ec);
-                          check_reconnect();
-                        }
-                      });
+    rp->async_resolve(
+        typename socket_impl<T>::resolver::query(host, std::to_string(port)),
+        [this, resolver = std::move(resolver)](const std::error_code& ec, const typename socket_impl<T>::resolver::results_type& endpoints) {
+          if (!ec) {
+            asio::async_connect(tcp_channel_t<T>::get_socket(), endpoints,
+                                [this](const std::error_code& ec, const typename socket_impl<T>::endpoint&) {
+                                  async_connect_handler<T>(ec);
+                                });
+          } else {
+            if (on_open_failed) on_open_failed(ec);
+            check_reconnect();
+          }
+        });
   }
 
   void do_open(const std::string& endpoint) {
-    static_assert(std::is_same<T, asio::local::stream_protocol>::value, "");
-    socket_.async_connect(typename T::endpoint(endpoint), [this](const std::error_code& ec) {
-      async_connect_handler(ec);
+    static_assert(T == socket_type::domain, "");
+    socket_.async_connect(typename socket_impl<T>::endpoint(endpoint), [this](const std::error_code& ec) {
+      async_connect_handler<socket_type::domain>(ec);
     });
   }
 
-  void async_connect_handler(const std::error_code& ec) {
+  template <socket_type>
+  void async_connect_handler(const std::error_code& ec);
+
+  template <>
+  void async_connect_handler<socket_type::normal>(const std::error_code& ec) {
     if (!ec) {
       this->init_socket();
       tcp_channel_t<T>::on_close = [this] {
@@ -124,6 +134,39 @@ class tcp_client_t : public tcp_channel_t<T> {
     }
   }
 
+  template <>
+  inline void async_connect_handler<socket_type::domain>(const std::error_code& ec) {
+    async_connect_handler<socket_type::normal>(ec);
+  }
+
+#ifdef ASIO_NET_ENABLE_SSL
+  template <>
+  void async_connect_handler<socket_type::ssl>(const std::error_code& ec) {
+    if (!ec) {
+      this->init_socket();
+      socket_.async_handshake(asio::ssl::stream_base::client, [this](const std::error_code& error) {
+        if (!error) {
+          tcp_channel_t<T>::on_close = [this] {
+            tcp_client_t::on_close();
+            check_reconnect();
+          };
+          if (on_open) on_open();
+          if (reconnect_timer_) {
+            reconnect_timer_->cancel();
+          }
+          this->do_read_start();
+        } else {
+          if (on_open_failed) on_open_failed(error);
+          check_reconnect();
+        }
+      });
+    } else {
+      if (on_open_failed) on_open_failed(ec);
+      check_reconnect();
+    }
+  }
+#endif
+
  public:
   std::function<void()> on_open;
   std::function<void(std::error_code)> on_open_failed;
@@ -134,7 +177,7 @@ class tcp_client_t : public tcp_channel_t<T> {
 
  private:
   asio::io_context& io_context_;
-  socket socket_;
+  typename socket_impl<T>::socket socket_;
   config config_;
   std::unique_ptr<asio::steady_timer> reconnect_timer_;
   uint32_t reconnect_ms_ = 0;

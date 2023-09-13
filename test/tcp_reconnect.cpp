@@ -1,4 +1,3 @@
-#include <atomic>
 #include <cstdio>
 #include <cstdlib>
 #include <thread>

@@ -4,7 +4,8 @@
 
 namespace asio_net {
 
-using rpc_server = detail::rpc_server_t<asio::ip::tcp>;
-using domain_rpc_server = detail::rpc_server_t<asio::local::stream_protocol>;
+using rpc_server = detail::rpc_server_t<detail::socket_type::normal>;
+using rpc_server_ssl = detail::rpc_server_t<detail::socket_type::ssl>;
+using domain_rpc_server = detail::rpc_server_t<detail::socket_type::domain>;
 
 }  // namespace asio_net
