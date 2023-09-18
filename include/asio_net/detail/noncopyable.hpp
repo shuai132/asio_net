@@ -1,6 +1,7 @@
 #pragma once
 
 namespace asio_net {
+namespace detail {
 
 class noncopyable {
  protected:
@@ -12,4 +13,5 @@ class noncopyable {
   const noncopyable& operator=(const noncopyable&) = delete;
 };
 
+}  // namespace detail
 }  // namespace asio_net

@@ -25,7 +25,7 @@ int main(int argc, char** argv) {
   static std::atomic_bool pass_flag_client_close{false};
   std::thread([] {
     asio::io_context context;
-    domain_tcp_server server(context, ENDPOINT, config{.auto_pack = true});
+    domain_tcp_server server(context, ENDPOINT, tcp_config{.auto_pack = true});
     server.on_session = [](const std::weak_ptr<domain_tcp_session>& ws) {
       LOG("on_session:");
       auto session = ws.lock();
@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
 
   std::thread([] {
     asio::io_context context;
-    domain_tcp_client client(context, config{.auto_pack = true});
+    domain_tcp_client client(context, tcp_config{.auto_pack = true});
     client.on_open = [&] {
       LOG("client on_open:");
       for (uint32_t i = 0; i < test_count_max; ++i) {

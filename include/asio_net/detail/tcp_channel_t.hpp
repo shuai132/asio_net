@@ -16,7 +16,7 @@ namespace detail {
 template <socket_type T>
 class tcp_channel_t : private noncopyable {
  public:
-  tcp_channel_t(typename socket_impl<T>::socket& socket, const config& config) : socket_(socket), config_(config) {
+  tcp_channel_t(typename socket_impl<T>::socket& socket, const tcp_config& config) : socket_(socket), config_(config) {
     ASIO_NET_LOGD("tcp_channel: %p", this);
   }
 
@@ -205,7 +205,7 @@ class tcp_channel_t : private noncopyable {
 
  private:
   typename socket_impl<T>::socket& socket_;
-  const config& config_;
+  const tcp_config& config_;
   detail::message read_msg_;
   uint32_t send_buffer_now_ = 0;
   std::deque<std::string> write_msg_queue_;

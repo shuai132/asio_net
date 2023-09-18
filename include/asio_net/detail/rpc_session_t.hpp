@@ -12,7 +12,7 @@ namespace detail {
 template <socket_type T>
 class rpc_session_t : noncopyable, public std::enable_shared_from_this<rpc_session_t<T>> {
  public:
-  explicit rpc_session_t(asio::io_context& io_context) : io_context_(io_context) {
+  explicit rpc_session_t(asio::io_context& io_context, rpc_config& rpc_config) : io_context_(io_context), rpc_config_(rpc_config) {
     ASIO_NET_LOGD("rpc_session: %p", this);
   }
 
@@ -25,7 +25,11 @@ class rpc_session_t : noncopyable, public std::enable_shared_from_this<rpc_sessi
     tcp_session_ = std::move(ws);
     auto tcp_session = tcp_session_.lock();
 
-    rpc = rpc_core::rpc::create();
+    if (rpc_config_.rpc) {
+      rpc = rpc_config_.rpc;
+    } else {
+      rpc = rpc_core::rpc::create();
+    }
 
     rpc->set_timer([this](uint32_t ms, rpc_core::rpc::timeout_cb cb) {
       auto timer = std::make_shared<asio::steady_timer>(io_context_);
@@ -76,6 +80,7 @@ class rpc_session_t : noncopyable, public std::enable_shared_from_this<rpc_sessi
 
  private:
   asio::io_context& io_context_;
+  rpc_config& rpc_config_;
   std::weak_ptr<detail::tcp_channel_t<T>> tcp_session_;
 };
 

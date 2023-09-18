@@ -13,12 +13,10 @@ namespace detail {
 template <socket_type T>
 class rpc_client_t : noncopyable {
  public:
-  explicit rpc_client_t(asio::io_context& io_context, uint32_t max_body_size = UINT32_MAX)
-      : io_context_(io_context),
-        client_(
-            std::make_shared<detail::tcp_client_t<T>>(io_context, config{.auto_pack = true, .enable_ipv6 = true, .max_body_size = max_body_size})) {
+  explicit rpc_client_t(asio::io_context& io_context, rpc_config rpc_config = {})
+      : io_context_(io_context), rpc_config_(rpc_config), client_(std::make_shared<detail::tcp_client_t<T>>(io_context, rpc_config.to_tcp_config())) {
     client_->on_open = [this]() {
-      auto session = std::make_shared<rpc_session_t<T>>(io_context_);
+      auto session = std::make_shared<rpc_session_t<T>>(io_context_, rpc_config_);
       session->init(client_);
 
       session->on_close = [this] {
@@ -36,12 +34,10 @@ class rpc_client_t : noncopyable {
   }
 
 #ifdef ASIO_NET_ENABLE_SSL
-  explicit rpc_client_t(asio::io_context& io_context, asio::ssl::context& ssl_context, uint32_t max_body_size = UINT32_MAX)
-      : io_context_(io_context),
-        client_(std::make_shared<detail::tcp_client_t<T>>(io_context, ssl_context,
-                                                          config{.auto_pack = true, .enable_ipv6 = true, .max_body_size = max_body_size})) {
+  explicit rpc_client_t(asio::io_context& io_context, asio::ssl::context& ssl_context, rpc_config rpc_config = {})
+      : io_context_(io_context), client_(std::make_shared<detail::tcp_client_t<T>>(io_context, ssl_context, rpc_config.to_tcp_config())) {
     client_->on_open = [this]() {
-      auto session = std::make_shared<rpc_session_t<T>>(io_context_);
+      auto session = std::make_shared<rpc_session_t<T>>(io_context_, rpc_config_);
       session->init(client_);
 
       session->on_close = [this] {
@@ -96,6 +92,7 @@ class rpc_client_t : noncopyable {
 
  private:
   asio::io_context& io_context_;
+  rpc_config rpc_config_;
   std::shared_ptr<detail::tcp_client_t<T>> client_;
 };
 

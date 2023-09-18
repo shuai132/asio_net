@@ -14,7 +14,7 @@ class tcp_session_t : public tcp_channel_t<T>, public std::enable_shared_from_th
   using socket = typename socket_impl<T>::socket;
 
  public:
-  explicit tcp_session_t(socket socket, const config& config) : tcp_channel_t<T>(socket_, config), socket_(std::move(socket)) {
+  explicit tcp_session_t(socket socket, const tcp_config& config) : tcp_channel_t<T>(socket_, config), socket_(std::move(socket)) {
     this->init_socket();
   }
 
@@ -43,7 +43,7 @@ class tcp_server_t {
   using endpoint = typename socket_impl<T>::endpoint;
 
  public:
-  tcp_server_t(asio::io_context& io_context, uint16_t port, config config = {})
+  tcp_server_t(asio::io_context& io_context, uint16_t port, tcp_config config = {})
       : io_context_(io_context),
         acceptor_(io_context, endpoint(config.enable_ipv6 ? asio::ip::tcp::v6() : asio::ip::tcp::v4(), port)),
         config_(config) {
@@ -51,7 +51,7 @@ class tcp_server_t {
   }
 
 #ifdef ASIO_NET_ENABLE_SSL
-  tcp_server_t(asio::io_context& io_context, uint16_t port, asio::ssl::context& ssl_context, config config = {})
+  tcp_server_t(asio::io_context& io_context, uint16_t port, asio::ssl::context& ssl_context, tcp_config config = {})
       : io_context_(io_context), ssl_context_(ssl_context), acceptor_(io_context, endpoint(asio::ip::tcp::v4(), port)), config_(config) {
     config_.init();
   }
@@ -64,7 +64,7 @@ class tcp_server_t {
    * @param endpoint e.g. /tmp/foobar
    * @param config
    */
-  tcp_server_t(asio::io_context& io_context, const std::string& endpoint, config config = {})
+  tcp_server_t(asio::io_context& io_context, const std::string& endpoint, tcp_config config = {})
       : io_context_(io_context), acceptor_(io_context, typename socket_impl<T>::endpoint(endpoint)), config_(config) {
     config_.init();
   }
@@ -91,7 +91,7 @@ class tcp_server_t {
   typename std::conditional<T == socket_type::ssl, asio::ssl::context&, uint8_t>::type ssl_context_;
 #endif
   typename socket_impl<T>::acceptor acceptor_;
-  config config_;
+  tcp_config config_;
 };
 
 template <>
