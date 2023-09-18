@@ -31,19 +31,19 @@ Options:
 ## Usage
 
 The following are examples of using each module. For complete unit tests,
-please refer to the source code: [test](./test)
+please refer to the source code: [test](test)
 
 * TCP
 
-You can enable automatic handling of packet fragmentation using `config`.
-Subsequent send and receive will be complete data packets.
+  You can enable automatic handling of packet fragmentation using `tcp_config`.
+  Subsequent send and receive will be complete data packets.
 
-By default, this feature is disabled.
+  By default, this feature is disabled.
 
 ```c++
   // echo server
   asio::io_context context;
-  tcp_server server(context, PORT/*, config*/);
+  tcp_server server(context, PORT/*, tcp_config*/);
   server.on_session = [](const std::weak_ptr<tcp_session>& ws) {
     auto session = ws.lock();
     session->on_close = [] {
@@ -58,7 +58,7 @@ By default, this feature is disabled.
 ```c++
   // echo client
   asio::io_context context;
-  tcp_client client(context/*, config*/);
+  tcp_client client(context/*, tcp_config*/);
 
   client.on_data = [](const std::string& data) {
   };
@@ -90,10 +90,13 @@ By default, this feature is disabled.
 
 * RPC
 
+  rpc based on tcp and [rpc_core](https://github.com/shuai132/rpc_core), and also support ipv6 and ssl.
+  more usages, see [rpc.cpp](test/rpc.cpp) and [rpc_2.cpp](test/rpc_2.cpp)
+
 ```c++
   // server
   asio::io_context context;
-  rpc_server server(context, PORT);
+  rpc_server server(context, PORT/*, rpc_config*/);
   server.on_session = [](const std::weak_ptr<rpc_session>& rs) {
     auto session = rs.lock();
     session->on_close = [] {
@@ -108,7 +111,7 @@ By default, this feature is disabled.
 ```c++
   // client
   asio::io_context context;
-  rpc_client client(context);
+  rpc_client client(context/*, rpc_config*/);
   client.on_open = [](const std::shared_ptr<rpc_core::rpc>& rpc) {
     rpc->cmd("cmd")
         ->msg(std::string("hello"))
