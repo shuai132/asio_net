@@ -20,8 +20,14 @@ int main(int argc, char** argv) {
 
   // server
   std::thread([] {
-    asio::io_context context;
     auto rpc = rpc_core::rpc::create();
+    rpc->subscribe("cmd", [](const std::string& data) -> std::string {
+      LOG("session on cmd: %s", data.c_str());
+      ASSERT(data == "hello");
+      return "world";
+    });
+
+    asio::io_context context;
     static rpc_server server(context, PORT, rpc_config{.rpc = rpc});  // static for test session lifecycle
     server.on_session = [&](const std::weak_ptr<rpc_session>& rs) {
       LOG("on_session:");
@@ -31,19 +37,16 @@ int main(int argc, char** argv) {
         LOG("session on_close:");
         pass_flag_session_close = true;
       };
-      session->rpc->subscribe("cmd", [](const std::string& data) -> std::string {
-        LOG("session on cmd: %s", data.c_str());
-        ASSERT(data == "hello");
-        return "world";
-      });
     };
     server.start(true);
   }).detach();
 
   // client
   std::thread([] {
-    asio::io_context context;
     auto rpc = rpc_core::rpc::create();
+    rpc->cmd("cmd")->msg(std::string("hello"))->call();  // no effect
+
+    asio::io_context context;
     static rpc_client client(context, rpc_config{.rpc = rpc});  // static for test session lifecycle
     client.on_open = [&](const std::shared_ptr<rpc_core::rpc>& rpc_) {
       LOG("client on_open:");
@@ -66,6 +69,9 @@ int main(int argc, char** argv) {
     };
     client.open("localhost", PORT);
     client.run();
+
+    LOG("client exited");
+    rpc->cmd("cmd")->msg(std::string("hello"))->call();  // no effect
   }).join();
 
   ASSERT(pass_flag_rpc_pass);

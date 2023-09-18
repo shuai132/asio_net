@@ -19,8 +19,8 @@ int main(int argc, char** argv) {
     test_count_max = std::strtol(argv[1], nullptr, 10);
   }
 
+  // server
   static std::atomic_bool pass_flag_session_close{false};
-  static std::atomic_bool pass_flag_client_close{false};
   std::thread([] {
     asio::io_context context;
     tcp_server server(context, PORT, tcp_config{.auto_pack = true});
@@ -41,6 +41,9 @@ int main(int argc, char** argv) {
     };
     server.start(true);
   }).detach();
+
+  // client
+  static std::atomic_bool pass_flag_client_close{false};
   std::thread([] {
     asio::io_context context;
     tcp_client client(context, tcp_config{.auto_pack = true});
@@ -68,6 +71,7 @@ int main(int argc, char** argv) {
     client.open("localhost", PORT);
     client.run();
   }).join();
+
   ASSERT(pass_flag_session_close);
   ASSERT(pass_flag_client_close);
   return EXIT_SUCCESS;
