@@ -3,7 +3,7 @@
 #include <deque>
 #include <utility>
 
-#include "../config.h"
+#include "../config.hpp"
 #include "asio.hpp"
 #include "log.h"
 #include "message.hpp"

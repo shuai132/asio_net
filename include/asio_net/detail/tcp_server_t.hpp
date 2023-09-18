@@ -2,7 +2,7 @@
 
 #include <utility>
 
-#include "../config.h"
+#include "../config.hpp"
 #include "asio.hpp"
 #include "tcp_channel_t.hpp"
 

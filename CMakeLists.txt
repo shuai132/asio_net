@@ -48,6 +48,7 @@ if (ASIO_NET_BUILD_TEST)
     # for android standalone e.g. termux
     add_definitions(-DANDROID_STANDALONE)
 
+    add_executable(${PROJECT_NAME}_test_version test/version.cpp)
     add_executable(${PROJECT_NAME}_test_tcp test/tcp.cpp)
     add_executable(${PROJECT_NAME}_test_tcp_s test/tcp_s.cpp)
     add_executable(${PROJECT_NAME}_test_tcp_c test/tcp_c.cpp)

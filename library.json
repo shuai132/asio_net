@@ -15,7 +15,7 @@
     "srcDir": "_",
     "flags": [
       "-I include",
-      "-I asio_net/rpc_core/include"
+      "-I include/asio_net/rpc_core/include"
     ]
   }
 }
