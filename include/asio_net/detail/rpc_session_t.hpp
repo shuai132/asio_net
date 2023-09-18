@@ -2,9 +2,9 @@
 
 #include <utility>
 
-#include "detail/noncopyable.hpp"
-#include "detail/tcp_channel_t.hpp"
+#include "noncopyable.hpp"
 #include "rpc_core.hpp"
+#include "tcp_channel_t.hpp"
 
 namespace asio_net {
 namespace detail {

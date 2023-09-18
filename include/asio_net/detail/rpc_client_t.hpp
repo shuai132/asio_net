@@ -2,10 +2,10 @@
 
 #include <utility>
 
-#include "detail/noncopyable.hpp"
+#include "noncopyable.hpp"
 #include "rpc_core.hpp"
-#include "rpc_session.hpp"
-#include "tcp_client.hpp"
+#include "rpc_session_t.hpp"
+#include "tcp_client_t.hpp"
 
 namespace asio_net {
 namespace detail {

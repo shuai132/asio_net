@@ -3,8 +3,8 @@
 #include <deque>
 #include <utility>
 
+#include "../config.h"
 #include "asio.hpp"
-#include "config.h"
 #include "log.h"
 #include "message.hpp"
 #include "noncopyable.hpp"

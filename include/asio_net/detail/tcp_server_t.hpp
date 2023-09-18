@@ -2,8 +2,8 @@
 
 #include <utility>
 
+#include "../config.h"
 #include "asio.hpp"
-#include "config.h"
 #include "tcp_channel_t.hpp"
 
 namespace asio_net {

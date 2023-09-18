@@ -3,8 +3,8 @@
 #include <utility>
 
 #include "asio.hpp"
-#include "rpc_session.hpp"
-#include "tcp_server.hpp"
+#include "rpc_session_t.hpp"
+#include "tcp_server_t.hpp"
 
 namespace asio_net {
 namespace detail {

@@ -14,9 +14,8 @@
   "build": {
     "srcDir": "_",
     "flags": [
-      "-I .",
-      "-I rpc",
-      "-I rpc/rpc_core"
+      "-I include",
+      "-I asio_net/rpc_core/include"
     ]
   }
 }

@@ -17,15 +17,14 @@ set(CMAKE_CXX_STANDARD 14)
 add_compile_options(-Wall)
 
 add_library(${PROJECT_NAME} INTERFACE)
-target_include_directories(${PROJECT_NAME} INTERFACE .)
+target_include_directories(${PROJECT_NAME} INTERFACE include)
 if (ASIO_NET_ENABLE_SSL)
     target_compile_definitions(${PROJECT_NAME} INTERFACE -DASIO_NET_ENABLE_SSL)
 endif ()
 
 if (ASIO_NET_ENABLE_RPC)
     target_include_directories(${PROJECT_NAME} INTERFACE
-            rpc/rpc_core
-            rpc
+            include/asio_net/rpc_core/include
             )
 endif ()
 
