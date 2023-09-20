@@ -49,8 +49,12 @@ class rpc_session_t : noncopyable, public std::enable_shared_from_this<rpc_sessi
       }
     };
 
+    rpc->set_ready(true);
+
     // bind rpc_session lifecycle to tcp_session and end with on_close
     tcp_session->on_close = [this, rpc_session = this->shared_from_this()]() mutable {
+      rpc->set_ready(false);
+
       if (rpc_session->on_close) {
         rpc_session->on_close();
       }
