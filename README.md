@@ -12,7 +12,8 @@ and [rpc_core](https://github.com/shuai132/rpc_core)
 * RPC support, rely on: [rpc_core](https://github.com/shuai132/rpc_core)
 * Service discovery based on UDP multicast
 * Support IPv6 and SSL (with OpenSSL)
-* Domain socket and rpc support
+* Support domain socket and rpc
+* Support serial port
 * Comprehensive unittests
 * Automatic reconnection
 

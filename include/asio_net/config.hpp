@@ -47,4 +47,9 @@ struct rpc_config {
   }
 };
 
+struct serial_config {
+  uint32_t max_send_buffer_size = UINT32_MAX;
+  uint32_t max_recv_buffer_size = 1024;
+};
+
 }  // namespace asio_net
