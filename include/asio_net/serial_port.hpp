@@ -1,6 +1,7 @@
 #pragma once
 
 #include <deque>
+#include <utility>
 
 #include "asio.hpp"
 #include "asio_net/detail/log.h"
@@ -12,19 +13,17 @@ namespace asio_net {
 
 class serial_port : detail::noncopyable {
  public:
-  explicit serial_port(asio::io_context& io_context, std::string device = {}, uint32_t baud_rate = 115200)
-      : io_context_(io_context), serial_(io_context), device_(std::move(device)), baud_rate_(baud_rate) {}
-  explicit serial_port(asio::io_context& io_context, std::string vid, std::string pid)
-      : io_context_(io_context), serial_(io_context), vid_(std::move(vid)), pid_(std::move(pid)) {}
+  explicit serial_port(asio::io_context& io_context, serial_config config = {})
+      : io_context_(io_context), serial_(io_context), config_(std::move(config)) {}
 
-  template <typename SettableSerialPortOption>
-  void set_option(const SettableSerialPortOption& option) {
+  template <typename Option>
+  inline void set_option(const Option& option) {
     serial_.set_option(option);
   }
 
   void open(std::string device = {}) {
     if (!device.empty()) {
-      device_ = std::move(device);
+      config_.device = std::move(device);
     }
     try_open();
   }
@@ -60,18 +59,9 @@ class serial_port : detail::noncopyable {
   }
 
  private:
-  void init_options() {
-    serial_.set_option(asio::serial_port::baud_rate(baud_rate_));
-    serial_.set_option(asio::serial_port::flow_control(asio::serial_port::flow_control::none));
-    serial_.set_option(asio::serial_port::parity(asio::serial_port::parity::none));
-    serial_.set_option(asio::serial_port::stop_bits(asio::serial_port::stop_bits::one));
-    serial_.set_option(asio::serial_port::character_size(asio::serial_port::character_size(8)));
-  }
-
   void try_open() {
     try {
-      serial_.open(device_);
-      init_options();
+      serial_.open(config_.device);
       on_open();
       read_msg_.resize(config_.max_recv_buffer_size);
       do_read_data();
@@ -82,6 +72,11 @@ class serial_port : detail::noncopyable {
   }
 
   void do_write(std::string msg, bool from_queue) {
+    if (msg.size() > config_.max_send_buffer_size) {
+      ASIO_NET_LOGE("msg size=%zu > max_send_buffer_size=%u", msg.size(), config_.max_send_buffer_size);
+      do_close();
+    }
+
     // block wait send_buffer idle
     while (msg.size() + send_buffer_now_ > config_.max_send_buffer_size) {
       ASIO_NET_LOGV("block wait send_buffer idle");
@@ -100,8 +95,7 @@ class serial_port : detail::noncopyable {
     }
 
     auto keeper = std::make_unique<detail::message>(std::move(msg));
-    std::vector<asio::const_buffer> buffer;
-    buffer.emplace_back(asio::buffer(keeper->body));
+    auto buffer = asio::buffer(keeper->body);
     asio::async_write(serial_, buffer, [this, keeper = std::move(keeper)](const std::error_code& ec, std::size_t /*length*/) {
       send_buffer_now_ -= keeper->body.size();
       if (ec) {
@@ -172,12 +166,8 @@ class serial_port : detail::noncopyable {
  private:
   asio::io_context& io_context_;
   asio::serial_port serial_;
-  std::string device_;
-  uint32_t baud_rate_ = 115200;
-  std::string vid_;
-  std::string pid_;
-
   serial_config config_;
+
   std::string read_msg_;
   uint32_t send_buffer_now_ = 0;
   std::deque<std::string> write_msg_queue_;

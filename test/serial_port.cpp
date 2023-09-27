@@ -17,9 +17,17 @@ int main(int argc, char** argv) {
   serial.set_reconnect(1000);
   serial.on_open = [&] {
     LOG("serial on_open:");
+    /// set_option
+    serial.set_option(asio::serial_port::baud_rate(115200));
+    serial.set_option(asio::serial_port::flow_control(asio::serial_port::flow_control::none));
+    serial.set_option(asio::serial_port::parity(asio::serial_port::parity::none));
+    serial.set_option(asio::serial_port::stop_bits(asio::serial_port::stop_bits::one));
+    serial.set_option(asio::serial_port::character_size(asio::serial_port::character_size(8)));
+
+    /// test
     serial.send("hello world");
   };
-  serial.on_data = [&](const std::string& data) {
+  serial.on_data = [](const std::string& data) {
     LOG("serial on_data: %s", data.c_str());
   };
   serial.on_open_failed = [](std::error_code ec) {

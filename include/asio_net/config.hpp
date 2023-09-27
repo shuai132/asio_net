@@ -48,6 +48,10 @@ struct rpc_config {
 };
 
 struct serial_config {
+  // device
+  std::string device;
+
+  // buffer
   uint32_t max_send_buffer_size = UINT32_MAX;
   uint32_t max_recv_buffer_size = 1024;
 };
