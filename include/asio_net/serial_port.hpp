@@ -53,6 +53,10 @@ class serial_port : detail::noncopyable {
     }
   }
 
+  serial_config& config() {
+    return config_;
+  }
+
   void run() {
     asio::io_context::work work(io_context_);
     io_context_.run();
@@ -60,13 +64,14 @@ class serial_port : detail::noncopyable {
 
  private:
   void try_open() {
+    if (on_try_open) on_try_open();
     try {
       serial_.open(config_.device);
-      on_open();
+      if (on_open) on_open();
       read_msg_.resize(config_.max_recv_buffer_size);
       do_read_data();
     } catch (const std::system_error& e) {
-      on_open_failed(e.code());
+      if (on_open_failed) on_open_failed(e.code());
       check_reconnect();
     }
   }
@@ -157,6 +162,7 @@ class serial_port : detail::noncopyable {
   }
 
  public:
+  std::function<void()> on_try_open;
   std::function<void()> on_open;
   std::function<void(std::error_code)> on_open_failed;
   std::function<void()> on_close;

@@ -15,6 +15,9 @@ int main(int argc, char** argv) {
   }
   serial_port serial(context);
   serial.set_reconnect(1000);
+  serial.on_try_open = [&] {
+    LOG("serial on_try_open: %s", serial.config().device.c_str());
+  };
   serial.on_open = [&] {
     LOG("serial on_open:");
     /// set_option
