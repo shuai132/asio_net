@@ -10,6 +10,8 @@ const uint16_t PORT = 6666;
 int main(int argc, char** argv) {
   asio::io_context context;
   rpc_client client(context);
+  client.config().ping_interval_ms = 1000;
+  client.set_reconnect(1000);
   client.on_open = [&](const std::shared_ptr<rpc_core::rpc>& rpc) {
     LOG("client on_open:");
     rpc->cmd("cmd")
@@ -19,26 +21,13 @@ int main(int argc, char** argv) {
         })
         ->call();
   };
+  client.on_open_failed = [](std::error_code ec) {
+    LOG("client on_open_failed: %d, %s", ec.value(), ec.message().c_str());
+  };
   client.on_close = [] {
     LOG("client on_close:");
   };
-
-  auto test = [&] {
-    LOG("open...");
-    client.open("localhost", PORT);
-    client.close();
-  };
-  std::function<void()> time_task;
-  asio::steady_timer timer(context);
-  time_task = [&] {
-    timer.expires_after(std::chrono::milliseconds(100));
-    timer.async_wait([&](std::error_code ec) {
-      test();
-      time_task();
-    });
-  };
-  time_task();
-
+  client.open("localhost", PORT);
   client.run();
   return 0;
 }

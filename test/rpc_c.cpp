@@ -14,7 +14,7 @@ int main(int argc, char** argv) {
     LOG("client on_open:");
     rpc->cmd("cmd")
         ->msg(std::string("hello"))
-        ->rsp([&](const std::string& data) {
+        ->rsp([](const std::string& data) {
           LOG("cmd rsp: %s", data.c_str());
         })
         ->call();

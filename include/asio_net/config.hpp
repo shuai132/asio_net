@@ -27,6 +27,8 @@ struct tcp_config {
 struct rpc_config {
   // rpc config
   std::shared_ptr<rpc_core::rpc> rpc;
+  uint32_t ping_interval_ms = 0;
+  uint32_t pong_timeout_ms = 1000;
 
   // socket config
   bool enable_ipv6 = false;

@@ -46,8 +46,10 @@ class tcp_client_t : public tcp_channel_t<T> {
     open_();
   }
 
-  void close() {
-    cancel_reconnect();
+  void close(bool need_reconnect = false) {
+    if (!need_reconnect) {
+      cancel_reconnect();
+    }
     tcp_channel_t<T>::close();
   }
 
