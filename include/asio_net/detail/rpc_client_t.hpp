@@ -70,6 +70,7 @@ class rpc_client_t : noncopyable {
   }
 
   void close() {
+    stop_ping();
     client_->close();
   }
 
@@ -92,8 +93,9 @@ class rpc_client_t : noncopyable {
     }
     ping_timer_->expires_after(std::chrono::milliseconds(rpc_config_.ping_interval_ms));
     ping_timer_->async_wait([this](std::error_code ec) {
+      if (ec) return;
       auto session = rpc_session_.lock();
-      if (!ec && session && session->rpc->is_ready()) {
+      if (session && session->rpc->is_ready()) {
         ASIO_NET_LOGD("ping...");
         session->rpc->ping()
             ->rsp([this] {
