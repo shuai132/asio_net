@@ -11,7 +11,7 @@ using namespace asio_net;
 
 const uint16_t PORT = 6666;
 
-int main(int argc, char** argv) {
+int main() {
   // server
   std::thread([] {
     asio::io_context context;
@@ -50,6 +50,7 @@ int main(int argc, char** argv) {
       client.send(msg);
     };
     client.on_data = [&](const std::string& data) {
+      (void)data;
       LOG("client on_data:");
     };
     client.on_close = [&] {

@@ -12,7 +12,7 @@ using namespace asio_net;
 
 const char* ENDPOINT = "/tmp/foobar";
 
-int main(int argc, char** argv) {
+int main() {
   ::unlink(ENDPOINT);  // remove previous binding
 
   // test flags

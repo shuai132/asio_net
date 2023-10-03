@@ -6,7 +6,7 @@ using namespace asio_net;
 
 const uint16_t PORT = 6666;
 
-int main(int argc, char** argv) {
+int main() {
   asio::io_context context;
   tcp_server server(context, PORT);
   server.on_session = [](const std::weak_ptr<tcp_session>& ws) {

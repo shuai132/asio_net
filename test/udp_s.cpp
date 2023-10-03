@@ -5,7 +5,7 @@ using namespace asio_net;
 
 const uint16_t PORT = 6666;
 
-int main(int argc, char** argv) {
+int main() {
   asio::io_context context;
   udp_server server(context, PORT);
   server.on_data = [](uint8_t* data, size_t size, const udp_server::endpoint& from) {

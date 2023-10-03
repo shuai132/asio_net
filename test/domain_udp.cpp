@@ -25,6 +25,9 @@ int main(int argc, char** argv) {
     asio::io_context context;
     domain_udp_server server(context, ENDPOINT);
     server.on_data = [](uint8_t* data, size_t size, const domain_udp_server::endpoint& from) {
+      (void)data;
+      (void)size;
+      (void)from;
 #ifndef ASIO_NET_DISABLE_ON_DATA_PRINT
       LOG("on_data: %s", std::string((char*)data, size).c_str());
 #endif
@@ -45,6 +48,7 @@ int main(int argc, char** argv) {
       for (uint32_t i = 0; i < test_count_max; ++i) {
         auto data = std::to_string(i);
         client.send_to(data, endpoint, [&](const std::error_code& ec, std::size_t size) {
+          (void)size;
           if (ec) {
             send_failed_count++;
           }

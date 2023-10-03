@@ -34,6 +34,7 @@ int main(int argc, char** argv) {
         pass_flag_session_close = true;
       };
       session->on_data = [ws](std::string data) {
+        (void)data;
         ASSERT(!ws.expired());
 #ifndef ASIO_NET_DISABLE_ON_DATA_PRINT
         LOG("session on_data: %s", data.c_str());

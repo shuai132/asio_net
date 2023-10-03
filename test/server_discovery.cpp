@@ -6,7 +6,7 @@
 
 using namespace asio_net;
 
-int main(int argc, char** argv) {
+int main() {
   std::thread([] {
     asio::io_context context;
     server_discovery::receiver receiver(context, [](const std::string& name, const std::string& message) {

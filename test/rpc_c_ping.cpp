@@ -7,12 +7,12 @@ using namespace asio_net;
 
 const uint16_t PORT = 6666;
 
-int main(int argc, char** argv) {
+int main() {
   asio::io_context context;
   rpc_client client(context);
   client.config().ping_interval_ms = 1000;
   client.set_reconnect(1000);
-  client.on_open = [&](const std::shared_ptr<rpc_core::rpc>& rpc) {
+  client.on_open = [](const std::shared_ptr<rpc_core::rpc>& rpc) {
     LOG("client on_open:");
     rpc->cmd("cmd")
         ->msg(std::string("hello"))

@@ -10,7 +10,7 @@ using namespace asio_net;
 
 const uint16_t PORT = 6666;
 
-int main(int argc, char** argv) {
+int main() {
   // server
   std::thread([] {
     asio::io_context context;
@@ -27,7 +27,8 @@ int main(int argc, char** argv) {
   std::thread([] {
     asio::io_context context;
     static rpc_client client(context);  // static for test session lifecycle
-    client.on_open = [&](const std::shared_ptr<rpc_core::rpc>& rpc) {
+    client.on_open = [](const std::shared_ptr<rpc_core::rpc>& rpc) {
+      (void)rpc;
       LOG("client on_open:");
     };
     client.on_close = [&] {

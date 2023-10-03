@@ -5,7 +5,7 @@ using namespace asio_net;
 
 const uint16_t PORT = 6666;
 
-int main(int argc, char** argv) {
+int main() {
   asio::io_context context;
   udp_client client(context);
   udp_client::endpoint endpoint(asio::ip::address_v4::from_string("127.0.0.1"), PORT);

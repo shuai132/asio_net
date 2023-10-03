@@ -12,7 +12,7 @@ using namespace asio_net;
 
 const uint16_t PORT = 6666;
 
-int main(int argc, char** argv) {
+int main() {
   // test flags
   static std::atomic_bool pass_flag_rpc_pass{false};
   static std::atomic_bool pass_flag_session_close{false};
