@@ -21,11 +21,16 @@ class rpc_session_t : noncopyable, public std::enable_shared_from_this<rpc_sessi
   }
 
  public:
-  void init(std::weak_ptr<detail::tcp_channel_t<T>> ws) {
+  bool init(std::weak_ptr<detail::tcp_channel_t<T>> ws) {
     tcp_session_ = std::move(ws);
     auto tcp_session = tcp_session_.lock();
 
     if (rpc_config_.rpc) {
+      if (rpc_config_.rpc->is_ready()) {
+        ASIO_NET_LOGD("rpc already connected");
+        tcp_session->close();
+        return false;
+      }
       rpc = rpc_config_.rpc;
     } else {
       rpc = rpc_core::rpc::create();
@@ -67,6 +72,7 @@ class rpc_session_t : noncopyable, public std::enable_shared_from_this<rpc_sessi
     tcp_session->on_data = [this](std::string data) {
       rpc->get_connection()->on_recv_package(std::move(data));
     };
+    return true;
   }
 
   void close() {

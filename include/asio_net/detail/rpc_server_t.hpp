@@ -17,7 +17,7 @@ class rpc_server_t : noncopyable {
     static_assert(T == detail::socket_type::normal, "");
     server_.on_session = [this](std::weak_ptr<detail::tcp_session_t<T>> ws) {
       auto session = std::make_shared<rpc_session_t<T>>(io_context_, rpc_config_);
-      session->init(std::move(ws));
+      if (!session->init(std::move(ws))) return;
       if (on_session) {
         on_session(session);
       }
@@ -30,7 +30,7 @@ class rpc_server_t : noncopyable {
     static_assert(T == detail::socket_type::ssl, "");
     server_.on_session = [this](std::weak_ptr<detail::tcp_session_t<T>> ws) {
       auto session = std::make_shared<rpc_session_t<T>>(io_context_, rpc_config_);
-      session->init(std::move(ws));
+      if (!session->init(std::move(ws))) return;
       if (on_session) {
         on_session(session);
       }
@@ -46,7 +46,7 @@ class rpc_server_t : noncopyable {
     static_assert(T == detail::socket_type::domain, "");
     server_.on_session = [this](std::weak_ptr<detail::tcp_session_t<T>> ws) {
       auto session = std::make_shared<rpc_session_t<T>>(io_context_, rpc_config_);
-      session->init(std::move(ws));
+      if (!session->init(std::move(ws))) return;
       if (on_session) {
         on_session(session);
       }
