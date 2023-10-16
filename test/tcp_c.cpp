@@ -21,7 +21,7 @@ int main() {
   client.on_close = [] {
     LOG("client on_close:");
   };
-  client.open("::1", PORT);
+  client.open("localhost", PORT);
   client.run();
   return 0;
 }
