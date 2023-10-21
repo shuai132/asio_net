@@ -27,9 +27,22 @@ Options:
 ## Requirements
 
 * C++14
-* asio
+* [asio](http://think-async.com/Asio/)
 
 ## Usage
+
+* clone
+
+```shell
+git clone --recurse-submodules git@github.com:shuai132/asio_net.git
+```
+
+or
+
+```shell
+git clone git@github.com:shuai132/asio_net.git && cd asio_net
+git submodule update --init --recursive
+```
 
 The following are examples of using each module. For complete unit tests,
 please refer to the source code: [test](test)
@@ -60,7 +73,6 @@ please refer to the source code: [test](test)
   // echo client
   asio::io_context context;
   tcp_client client(context/*, tcp_config*/);
-
   client.on_data = [](const std::string& data) {
   };
   client.on_close = [] {
@@ -142,6 +154,32 @@ please refer to the source code: [test](test)
   asio::io_context context;
   server_discovery::sender sender_ip(context, "ip", "message");
   context.run();
+```
+
+* Serial Port
+
+```c++
+  asio::io_context context;
+  serial_port serial(context);
+  serial.on_open = [&] {
+    /// set_option
+    serial.set_option(asio::serial_port::baud_rate(115200));
+    serial.set_option(asio::serial_port::flow_control(asio::serial_port::flow_control::none));
+    serial.set_option(asio::serial_port::parity(asio::serial_port::parity::none));
+    serial.set_option(asio::serial_port::stop_bits(asio::serial_port::stop_bits::one));
+    serial.set_option(asio::serial_port::character_size(asio::serial_port::character_size(8)));
+
+    /// test
+    serial.send("hello world");
+  };
+  serial.on_data = [](const std::string& data) {
+  };
+  serial.on_open_failed = [](std::error_code ec) {
+  };
+  serial.on_close = [] {
+  };
+  serial.open("/dev/tty.usbserial-xx");
+  serial.run();
 ```
 
 # Links

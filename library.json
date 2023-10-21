@@ -1,6 +1,6 @@
 {
   "name": "asio_net",
-  "description": "Tiny Async TCP/UDP/RPC Library, support any platform supported asio, eg: ESP32",
+  "description": "a tiny Async TCP/UDP/RPC library based on asio",
   "keywords": "tcp,udp,rpc,asio",
   "authors": {
     "name": "shuai132",
@@ -10,7 +10,7 @@
     "type": "git",
     "url": "https://github.com/shuai132/asio_net.git"
   },
-  "version": "2.0.0",
+  "version": "2.0.1",
   "build": {
     "srcDir": "_",
     "flags": [
