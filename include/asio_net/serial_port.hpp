@@ -21,6 +21,11 @@ class serial_port : detail::noncopyable {
     serial_.set_option(option);
   }
 
+  template <typename Option>
+  inline void get_option(Option& option) {
+    serial_.get_option(option);
+  }
+
   void open(std::string device = {}) {
     if (!device.empty()) {
       config_.device = std::move(device);
