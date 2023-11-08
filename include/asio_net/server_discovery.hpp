@@ -25,27 +25,28 @@ class receiver {
 
  public:
   receiver(asio::io_context& io_context, service_found_handle_t handle,  // NOLINT(cppcoreguidelines-pro-type-member-init)
-           const std::string& addr = addr_default, uint16_t port = port_default)
-      : socket_(io_context), service_found_handle_(std::move(handle)) {
-    // create the socket so that multiple may be bound to the same address.
-    asio::ip::udp::endpoint listen_endpoint(asio::ip::make_address("0.0.0.0"), port);
-    socket_.open(listen_endpoint.protocol());
-    socket_.bind(listen_endpoint);
-    socket_.set_option(asio::ip::udp::socket::reuse_address(true));
-    try_init(addr);
+           std::string addr = addr_default, uint16_t port = port_default)
+      : socket_(io_context), service_found_handle_(std::move(handle)), addr_(std::move(addr)), port_(port) {
+    try_init();
   }
 
  private:
-  void try_init(const std::string& addr) {
+  void try_init() {
     try {
-      socket_.set_option(asio::ip::multicast::join_group(asio::ip::make_address(addr)));
+      // create the socket so that multiple may be bound to the same address.
+      asio::ip::udp::endpoint listen_endpoint(asio::ip::make_address("0.0.0.0"), port_);
+      socket_.open(listen_endpoint.protocol());
+      socket_.set_option(asio::ip::udp::socket::reuse_address(true));
+      socket_.set_option(asio::ip::multicast::join_group(asio::ip::make_address(addr_)));
+      socket_.bind(listen_endpoint);
       do_receive();
     } catch (const std::exception& e) {
       ASIO_NET_LOGE("receive: init err: %s", e.what());
       auto timer = std::make_shared<asio::steady_timer>(socket_.get_executor());
       timer->expires_after(std::chrono::seconds(1));
-      timer->async_wait([=](const std::error_code&) mutable {
-        try_init(addr);
+      auto timer_p = timer.get();
+      timer_p->async_wait([this, timer = std::move(timer)](const std::error_code&) mutable {
+        try_init();
         timer = nullptr;
       });
     }
@@ -82,6 +83,8 @@ class receiver {
   asio::ip::udp::endpoint sender_endpoint_;
   std::array<char, 1024> data_;
   service_found_handle_t service_found_handle_;
+  std::string addr_;
+  uint16_t port_;
 };
 
 class sender {
