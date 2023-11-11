@@ -92,19 +92,21 @@ class tcp_client_t : public tcp_channel_t<T> {
     static_assert(T == socket_type::normal || T == socket_type::ssl, "");
     auto resolver = std::make_unique<typename socket_impl<T>::resolver>(io_context_);
     auto rp = resolver.get();
-    rp->async_resolve(
-        typename socket_impl<T>::resolver::query(host, std::to_string(port)),
-        [this, resolver = std::move(resolver)](const std::error_code& ec, const typename socket_impl<T>::resolver::results_type& endpoints) {
-          if (!ec) {
-            asio::async_connect(tcp_channel_t<T>::get_socket(), endpoints,
-                                [this](const std::error_code& ec, const typename socket_impl<T>::endpoint&) {
-                                  async_connect_handler<T>(ec);
-                                });
-          } else {
-            if (on_open_failed) on_open_failed(ec);
-            check_reconnect();
-          }
-        });
+    rp->async_resolve(typename socket_impl<T>::resolver::query(host, std::to_string(port)),
+                      [this, resolver = std::move(resolver), alive = std::weak_ptr<void>(this->is_alive_)](
+                          const std::error_code& ec, const typename socket_impl<T>::resolver::results_type& endpoints) mutable {
+                        if (alive.expired()) return;
+                        if (!ec) {
+                          asio::async_connect(tcp_channel_t<T>::get_socket(), endpoints,
+                                              [this, alive = std::move(alive)](const std::error_code& ec, const typename socket_impl<T>::endpoint&) {
+                                                if (alive.expired()) return;
+                                                async_connect_handler<T>(ec);
+                                              });
+                        } else {
+                          if (on_open_failed) on_open_failed(ec);
+                          check_reconnect();
+                        }
+                      });
   }
 
   void do_open(const std::string& endpoint) {

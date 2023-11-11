@@ -104,7 +104,7 @@ please refer to the source code: [test](test)
 * RPC
 
   rpc based on tcp and [rpc_core](https://github.com/shuai132/rpc_core), and also support ipv6 and ssl.
-  more usages, see [rpc.cpp](test/rpc.cpp) and [rpc_2.cpp](test/rpc_2.cpp)
+  more usages, see [rpc.cpp](test/rpc.cpp) and [rpc_config.cpp](test/rpc_config.cpp)
 
 ```c++
   // server

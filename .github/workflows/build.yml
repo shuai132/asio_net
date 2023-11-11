@@ -53,10 +53,10 @@ jobs:
           cd build
           ./asio_net_test_rpc
 
-      - name: Test RPC 2
+      - name: Test RPC (rpc_config)
         run: |
           cd build
-          ./asio_net_test_rpc_2
+          ./asio_net_test_rpc_config
 
       - name: Test RPC (reconnect)
         run: |

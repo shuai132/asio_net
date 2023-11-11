@@ -90,40 +90,47 @@ class tcp_channel_t : private noncopyable {
 
  private:
   void do_read_header(std::shared_ptr<tcp_channel_t> self) {
-    asio::async_read(socket_, asio::buffer(&read_msg_.length, sizeof(read_msg_.length)),
-                     [this, self = std::move(self)](const std::error_code& ec, std::size_t size) mutable {
-                       if (ec || size == 0) {
-                         ASIO_NET_LOGV("do_read_header: %s, size: %zu", ec.message().c_str(), size);
-                         do_close();
-                         return;
-                       }
-                       if (read_msg_.length <= config_.max_body_size) {
-                         do_read_body(std::move(self));
-                       } else {
-                         ASIO_NET_LOGE("read: body size=%u > max_body_size=%u", read_msg_.length, config_.max_body_size);
-                         do_close();
-                       }
-                     });
+    asio::async_read(
+        socket_, asio::buffer(&read_msg_.length, sizeof(read_msg_.length)),
+        [this, self = std::move(self), alive = std::weak_ptr<void>(this->is_alive_)](const std::error_code& ec, std::size_t size) mutable {
+          if (alive.expired()) return;
+          if (ec || size == 0) {
+            ASIO_NET_LOGE("do_read_header: %s, size: %zu", ec.message().c_str(), size);
+            do_close();
+            return;
+          }
+          if (read_msg_.length <= config_.max_body_size) {
+            do_read_body(std::move(self));
+          } else {
+            ASIO_NET_LOGE("read: body size=%u > max_body_size=%u", read_msg_.length, config_.max_body_size);
+            do_close();
+          }
+        });
   }
 
   void do_read_body(std::shared_ptr<tcp_channel_t> self) {
     read_msg_.body.resize(read_msg_.length);
-    asio::async_read(socket_, asio::buffer(read_msg_.body), [this, self = std::move(self)](const std::error_code& ec, std::size_t size) mutable {
-      if (ec || size == 0) {
-        ASIO_NET_LOGV("do_read_body: %s, size: %zu", ec.message().c_str(), size);
-        do_close();
-      } else {
-        auto msg = std::move(read_msg_.body);
-        read_msg_.clear();
-        if (on_data) on_data(std::move(msg));
-        do_read_header(std::move(self));
-      }
-    });
+    asio::async_read(
+        socket_, asio::buffer(read_msg_.body),
+        [this, self = std::move(self), alive = std::weak_ptr<void>(this->is_alive_)](const std::error_code& ec, std::size_t size) mutable {
+          if (alive.expired()) return;
+          if (ec || size == 0) {
+            ASIO_NET_LOGV("do_read_body: %s, size: %zu", ec.message().c_str(), size);
+            do_close();
+          } else {
+            auto msg = std::move(read_msg_.body);
+            read_msg_.clear();
+            if (on_data) on_data(std::move(msg));
+            do_read_header(std::move(self));
+          }
+        });
   }
 
   void do_read_data(std::shared_ptr<tcp_channel_t> self) {
     auto& readBuffer = read_msg_.body;
-    socket_.async_read_some(asio::buffer(readBuffer), [this, self = std::move(self)](const std::error_code& ec, std::size_t length) mutable {
+    socket_.async_read_some(asio::buffer(readBuffer), [this, self = std::move(self), alive = std::weak_ptr<void>(this->is_alive_)](
+                                                          const std::error_code& ec, std::size_t length) mutable {
+      if (alive.expired()) return;
       if (!ec) {
         if (on_data) on_data(std::string(read_msg_.body.data(), length));
         do_read_data(std::move(self));
@@ -167,21 +174,24 @@ class tcp_channel_t : private noncopyable {
       buffer.emplace_back(&keeper->length, sizeof(keeper->length));
     }
     buffer.emplace_back(asio::buffer(keeper->body));
-    asio::async_write(socket_, buffer, [this, keeper = std::move(keeper)](const std::error_code& ec, std::size_t /*length*/) {
-      send_buffer_now_ -= keeper->body.size();
-      if (ec) {
-        do_close();
-      }
+    asio::async_write(
+        socket_, buffer,
+        [this, keeper = std::move(keeper), alive = std::weak_ptr<void>(this->is_alive_)](const std::error_code& ec, std::size_t /*length*/) {
+          if (alive.expired()) return;
+          send_buffer_now_ -= keeper->body.size();
+          if (ec) {
+            do_close();
+          }
 
-      if (!write_msg_queue_.empty()) {
-        asio::post(socket_.get_executor(), [this, msg = std::move(write_msg_queue_.front())]() mutable {
-          do_write(std::move(msg), true);
+          if (!write_msg_queue_.empty()) {
+            asio::post(socket_.get_executor(), [this, msg = std::move(write_msg_queue_.front())]() mutable {
+              do_write(std::move(msg), true);
+            });
+            write_msg_queue_.pop_front();
+          } else {
+            write_msg_queue_.shrink_to_fit();
+          }
         });
-        write_msg_queue_.pop_front();
-      } else {
-        write_msg_queue_.shrink_to_fit();
-      }
-    });
   }
 
   void do_close() {
@@ -202,6 +212,9 @@ class tcp_channel_t : private noncopyable {
     write_msg_queue_.clear();
     write_msg_queue_.shrink_to_fit();
   }
+
+ protected:
+  std::shared_ptr<void> is_alive_ = std::make_shared<uint8_t>();
 
  private:
   typename socket_impl<T>::socket& socket_;

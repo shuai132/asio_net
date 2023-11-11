@@ -17,7 +17,7 @@ add_library(${PROJECT_NAME} INTERFACE)
 target_include_directories(${PROJECT_NAME} INTERFACE
         include
         include/asio_net/rpc_core/include
-        )
+)
 
 if (ASIO_NET_ENABLE_SSL)
     target_compile_definitions(${PROJECT_NAME} INTERFACE -DASIO_NET_ENABLE_SSL)
@@ -63,8 +63,9 @@ if (ASIO_NET_BUILD_TEST)
     add_compile_definitions(RPC_CORE_LOG_SHOW_DEBUG)
     add_compile_definitions(ASIO_NET_LOG_SHOW_DEBUG)
     add_executable(${PROJECT_NAME}_test_rpc test/rpc.cpp)
-    add_executable(${PROJECT_NAME}_test_rpc_2 test/rpc_2.cpp)
+    add_executable(${PROJECT_NAME}_test_rpc_config test/rpc_config.cpp)
     add_executable(${PROJECT_NAME}_test_rpc_reconnect test/rpc_reconnect.cpp)
+    add_executable(${PROJECT_NAME}_test_rpc_c_check_destroy test/rpc_c_check_destroy.cpp)
     add_executable(${PROJECT_NAME}_test_rpc_c_open_close test/rpc_c_open_close.cpp)
     add_executable(${PROJECT_NAME}_test_rpc_c_ping test/rpc_c_ping.cpp)
     add_executable(${PROJECT_NAME}_test_rpc_s test/rpc_s.cpp)
