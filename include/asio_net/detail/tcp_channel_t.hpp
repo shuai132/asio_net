@@ -73,10 +73,6 @@ class tcp_channel_t : private noncopyable {
     return socket_.remote_endpoint();
   }
 
- public:
-  std::function<void()> on_close;
-  std::function<void(std::string)> on_data;
-
  protected:
   void do_read_start(std::shared_ptr<tcp_channel_t> self = nullptr) {
     if (config_.auto_pack) {
@@ -212,6 +208,10 @@ class tcp_channel_t : private noncopyable {
     write_msg_queue_.clear();
     write_msg_queue_.shrink_to_fit();
   }
+
+ public:
+  std::function<void()> on_close;
+  std::function<void(std::string)> on_data;
 
  protected:
   std::shared_ptr<void> is_alive_ = std::make_shared<uint8_t>();
