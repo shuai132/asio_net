@@ -96,7 +96,7 @@ class tcp_server_t {
 
 template <>
 template <>
-void tcp_server_t<socket_type::normal>::do_accept<socket_type::normal>() {
+inline void tcp_server_t<socket_type::normal>::do_accept<socket_type::normal>() {
   acceptor_.async_accept([this](const std::error_code& ec, socket socket) {
     if (!ec) {
       auto session = std::make_shared<tcp_session_t<socket_type::normal>>(std::move(socket), config_);
@@ -111,7 +111,7 @@ void tcp_server_t<socket_type::normal>::do_accept<socket_type::normal>() {
 
 template <>
 template <>
-void tcp_server_t<socket_type::domain>::do_accept<socket_type::domain>() {
+inline void tcp_server_t<socket_type::domain>::do_accept<socket_type::domain>() {
   acceptor_.async_accept([this](const std::error_code& ec, socket socket) {
     if (!ec) {
       auto session = std::make_shared<tcp_session_t<socket_type::domain>>(std::move(socket), config_);
@@ -127,7 +127,7 @@ void tcp_server_t<socket_type::domain>::do_accept<socket_type::domain>() {
 #ifdef ASIO_NET_ENABLE_SSL
 template <>
 template <>
-void tcp_server_t<socket_type::ssl>::do_accept<socket_type::ssl>() {
+inline void tcp_server_t<socket_type::ssl>::do_accept<socket_type::ssl>() {
   acceptor_.async_accept([this](const std::error_code& ec, asio::ip::tcp::socket socket) {
     if (!ec) {
       using ssl_stream = typename socket_impl<socket_type::ssl>::socket;

@@ -44,6 +44,7 @@ if (ASIO_NET_BUILD_TEST)
     add_definitions(-DANDROID_STANDALONE)
 
     add_executable(${PROJECT_NAME}_test_version test/version.cpp)
+    add_executable(${PROJECT_NAME}_test_compile_check test/compile_check/main.cpp test/compile_check/lib.cpp)
     add_executable(${PROJECT_NAME}_test_tcp test/tcp.cpp)
     add_executable(${PROJECT_NAME}_test_tcp_s test/tcp_s.cpp)
     add_executable(${PROJECT_NAME}_test_tcp_c test/tcp_c.cpp)

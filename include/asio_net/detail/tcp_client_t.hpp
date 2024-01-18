@@ -138,7 +138,7 @@ class tcp_client_t : public tcp_channel_t<T> {
 
 template <>
 template <>
-void tcp_client_t<socket_type::normal>::async_connect_handler<socket_type::normal>(const std::error_code& ec) {
+inline void tcp_client_t<socket_type::normal>::async_connect_handler<socket_type::normal>(const std::error_code& ec) {
   if (!ec) {
     this->init_socket();
     tcp_channel_t<socket_type::normal>::on_close = [this] {
@@ -158,7 +158,7 @@ void tcp_client_t<socket_type::normal>::async_connect_handler<socket_type::norma
 
 template <>
 template <>
-void tcp_client_t<socket_type::domain>::async_connect_handler<socket_type::domain>(const std::error_code& ec) {
+inline void tcp_client_t<socket_type::domain>::async_connect_handler<socket_type::domain>(const std::error_code& ec) {
   if (!ec) {
     this->init_socket();
     tcp_channel_t<socket_type::domain>::on_close = [this] {
@@ -179,7 +179,7 @@ void tcp_client_t<socket_type::domain>::async_connect_handler<socket_type::domai
 #ifdef ASIO_NET_ENABLE_SSL
 template <>
 template <>
-void tcp_client_t<socket_type::ssl>::async_connect_handler<socket_type::ssl>(const std::error_code& ec) {
+inline void tcp_client_t<socket_type::ssl>::async_connect_handler<socket_type::ssl>(const std::error_code& ec) {
   if (!ec) {
     this->init_socket();
     socket_.async_handshake(asio::ssl::stream_base::client, [this](const std::error_code& error) {

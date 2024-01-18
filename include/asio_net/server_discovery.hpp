@@ -17,7 +17,7 @@ namespace asio_net {
  */
 namespace server_discovery {
 
-const char* addr_default = "239.255.0.1";
+const char* const addr_default = "239.255.0.1";
 const uint16_t port_default = 30001;
 
 class receiver {
