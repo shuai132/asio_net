@@ -90,11 +90,16 @@ class tcp_channel_t : private noncopyable {
         socket_, asio::buffer(&read_msg_.length, sizeof(read_msg_.length)),
         [this, self = std::move(self), alive = std::weak_ptr<void>(this->is_alive_)](const std::error_code& ec, std::size_t size) mutable {
           if (alive.expired()) return;
-          if (ec || size == 0) {
-            ASIO_NET_LOGE("do_read_header: %s, size: %zu", ec.message().c_str(), size);
+
+          if (ec == asio::error::eof || ec == asio::error::connection_reset) {
+            do_close();
+            return;
+          } else if (ec || size == 0) {
+            ASIO_NET_LOGW("do_read_header: %s, size: %zu", ec.message().c_str(), size);
             do_close();
             return;
           }
+
           if (read_msg_.length <= config_.max_body_size) {
             do_read_body(std::move(self));
           } else {
@@ -110,15 +115,20 @@ class tcp_channel_t : private noncopyable {
         socket_, asio::buffer(read_msg_.body),
         [this, self = std::move(self), alive = std::weak_ptr<void>(this->is_alive_)](const std::error_code& ec, std::size_t size) mutable {
           if (alive.expired()) return;
-          if (ec || size == 0) {
-            ASIO_NET_LOGV("do_read_body: %s, size: %zu", ec.message().c_str(), size);
+
+          if (ec == asio::error::eof || ec == asio::error::connection_reset) {
             do_close();
-          } else {
-            auto msg = std::move(read_msg_.body);
-            read_msg_.clear();
-            if (on_data) on_data(std::move(msg));
-            do_read_header(std::move(self));
+            return;
+          } else if (ec || size == 0) {
+            ASIO_NET_LOGW("do_read_body: %s, size: %zu", ec.message().c_str(), size);
+            do_close();
+            return;
           }
+
+          auto msg = std::move(read_msg_.body);
+          read_msg_.clear();
+          if (on_data) on_data(std::move(msg));
+          do_read_header(std::move(self));
         });
   }
 
