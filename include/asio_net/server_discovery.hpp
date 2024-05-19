@@ -89,7 +89,7 @@ class receiver {
 
 class sender {
  public:
-  sender(asio::io_context& io_context, const std::string& service_name, const std::string& message, uint send_period_sec = 1,
+  sender(asio::io_context& io_context, const std::string& service_name, const std::string& message, uint32_t send_period_sec = 1,
          const char* addr = addr_default, uint16_t port = port_default)
       : endpoint_(asio::ip::make_address(addr), port),
         socket_(io_context, endpoint_.protocol()),
@@ -120,7 +120,7 @@ class sender {
   asio::ip::udp::endpoint endpoint_;
   asio::ip::udp::socket socket_;
   asio::steady_timer timer_;
-  uint send_period_sec_;
+  uint32_t send_period_sec_;
   std::string message_;
 };
 
