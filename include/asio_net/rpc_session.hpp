@@ -1,5 +1,6 @@
 #pragma once
 
+#include "asio.hpp"
 #include "detail/rpc_session_t.hpp"
 
 namespace asio_net {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "asio.hpp"
 #include "detail/udp_client_t.hpp"
 
 namespace asio_net {

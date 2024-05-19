@@ -1,5 +1,6 @@
 #pragma once
 
+#include "asio.hpp"
 #include "detail/rpc_server_t.hpp"
 #include "rpc_session.hpp"
 

@@ -48,13 +48,13 @@ int main(int argc, char** argv) {
             send_failed_count++;
           }
         });
-        usleep(1);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
       }
     });
     context.run();
   }).join();
 
-  sleep(1);
+  std::this_thread::sleep_for(std::chrono::seconds(1));
   LOG("test_count_max: %d", test_count_max);
   LOG("test_count_received: %d", test_count_received.load());
   LOG("send_failed_count: %d", send_failed_count.load());
