@@ -27,9 +27,8 @@ struct tcp_config {
 struct rpc_config {
   // rpc config
   std::shared_ptr<rpc_core::rpc> rpc;  // NOTICE: set on server means that a single connection is desired
-  // for rpc client
-  uint32_t ping_interval_ms = 0;
-  uint32_t pong_timeout_ms = 1000;
+  uint32_t ping_interval_ms = 0;       // 0: disable auto ping, >0: enable auto ping
+  uint32_t pong_timeout_ms = 5000;     // if pong timeout, client/session will be close
 
   // socket config
   bool enable_ipv6 = false;

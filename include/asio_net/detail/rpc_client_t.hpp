@@ -26,7 +26,7 @@ class rpc_client_t : noncopyable {
         client_->check_reconnect();
       };
 
-      start_ping();
+      session->start_ping();
       if (on_open) on_open(session->rpc);
     };
 
@@ -70,7 +70,6 @@ class rpc_client_t : noncopyable {
   }
 
   void close() {
-    stop_ping();
     client_->close();
   }
 
@@ -84,39 +83,6 @@ class rpc_client_t : noncopyable {
 
   rpc_config& config() {
     return rpc_config_;
-  }
-
-  void start_ping() {
-    if (rpc_config_.ping_interval_ms == 0) return;
-    if (!ping_timer_) {
-      ping_timer_ = std::make_unique<asio::steady_timer>(io_context_);
-    }
-    ping_timer_->expires_after(std::chrono::milliseconds(rpc_config_.ping_interval_ms));
-    ping_timer_->async_wait([this](std::error_code ec) {
-      if (ec) return;
-      auto session = rpc_session_.lock();
-      if (session && session->rpc->is_ready()) {
-        ASIO_NET_LOGD("ping...");
-        session->rpc->ping()
-            ->rsp([this] {
-              start_ping();
-            })
-            ->timeout([this]() {
-              ASIO_NET_LOGW("ping timeout");
-              stop_ping();
-              client_->close(true);
-            })
-            ->timeout_ms(rpc_config_.pong_timeout_ms)
-            ->call();
-      }
-    });
-  }
-
-  void stop_ping() {
-    if (ping_timer_) {
-      ping_timer_->cancel();
-      ping_timer_ = nullptr;
-    }
   }
 
   void run() {
@@ -137,7 +103,6 @@ class rpc_client_t : noncopyable {
   rpc_config rpc_config_;
   std::shared_ptr<detail::tcp_client_t<T>> client_;
   std::weak_ptr<rpc_session_t<T>> rpc_session_;
-  std::unique_ptr<asio::steady_timer> ping_timer_;
 };
 
 }  // namespace detail

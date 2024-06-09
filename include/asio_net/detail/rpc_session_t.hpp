@@ -60,6 +60,8 @@ class rpc_session_t : noncopyable, public std::enable_shared_from_this<rpc_sessi
     tcp_session->on_close = [this, rpc_session = this->shared_from_this()]() mutable {
       rpc->set_ready(false);
 
+      stop_ping();
+
       if (rpc_session->on_close) {
         rpc_session->on_close();
       }
@@ -72,6 +74,8 @@ class rpc_session_t : noncopyable, public std::enable_shared_from_this<rpc_sessi
     tcp_session->on_data = [this](std::string data) {
       rpc->get_connection()->on_recv_package(std::move(data));
     };
+
+    start_ping();
     return true;
   }
 
@@ -79,6 +83,45 @@ class rpc_session_t : noncopyable, public std::enable_shared_from_this<rpc_sessi
     auto ts = tcp_session_.lock();
     if (ts) {
       ts->close();
+    }
+  }
+
+  void start_ping() {
+    if (rpc_config_.ping_interval_ms == 0) return;
+    if (!ping_timer_) {
+      ping_timer_ = std::make_unique<asio::steady_timer>(io_context_);
+    }
+    ping_timer_->expires_after(std::chrono::milliseconds(rpc_config_.ping_interval_ms));
+    ping_timer_->async_wait([ws = std::weak_ptr<rpc_session_t<T>>(rpc_session_t<T>::shared_from_this())](std::error_code ec) {
+      if (ec) return;
+      auto session = ws.lock();
+      if (session && session->rpc->is_ready()) {
+        ASIO_NET_LOGD("ping...");
+        session->rpc->ping()
+            ->rsp([ws] {
+              auto session = ws.lock();
+              if (session) {
+                session->start_ping();
+              }
+            })
+            ->timeout([ws]() {
+              ASIO_NET_LOGW("ping timeout");
+              auto session = ws.lock();
+              if (session) {
+                session->stop_ping();
+                session->close();
+              }
+            })
+            ->timeout_ms(session->rpc_config_.pong_timeout_ms)
+            ->call();
+      }
+    });
+  }
+
+  void stop_ping() {
+    if (ping_timer_) {
+      ping_timer_->cancel();
+      ping_timer_ = nullptr;
     }
   }
 
@@ -92,6 +135,7 @@ class rpc_session_t : noncopyable, public std::enable_shared_from_this<rpc_sessi
   asio::io_context& io_context_;
   rpc_config& rpc_config_;
   std::weak_ptr<detail::tcp_channel_t<T>> tcp_session_;
+  std::unique_ptr<asio::steady_timer> ping_timer_;
 };
 
 }  // namespace detail
