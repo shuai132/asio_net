@@ -49,7 +49,7 @@ class rpc_client_t : noncopyable {
         client_->check_reconnect();
       };
 
-      start_ping();
+      session->start_ping();
       if (on_open) on_open(session->rpc);
     };
 
