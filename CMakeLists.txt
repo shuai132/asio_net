@@ -21,6 +21,11 @@ else ()
     add_compile_options(-Wall -Wunused-parameter)
 endif ()
 
+if (MINGW)
+    add_compile_options(-D_WIN32_WINNT=0x0601)
+    link_libraries(ws2_32 wsock32)
+endif ()
+
 add_library(${PROJECT_NAME} INTERFACE)
 target_include_directories(${PROJECT_NAME} INTERFACE
         include
