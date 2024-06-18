@@ -10,7 +10,7 @@ namespace detail {
 
 struct message : private noncopyable {
   message() = default;
-  explicit message(std::string msg) : length(msg.length()), body(std::move(msg)) {}
+  explicit message(std::string msg) : length((uint32_t)msg.length()), body(std::move(msg)) {}
 
   void clear() {
     length = 0;

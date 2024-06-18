@@ -96,18 +96,18 @@ class serial_port : detail::noncopyable {
     // queue for asio::async_write
     if (!from_queue && send_buffer_now_ != 0) {
       ASIO_NET_LOGV("queue for asio::async_write");
-      send_buffer_now_ += msg.size();
+      send_buffer_now_ += (uint32_t)msg.size();
       write_msg_queue_.emplace_back(std::move(msg));
       return;
     }
     if (!from_queue) {
-      send_buffer_now_ += msg.size();
+      send_buffer_now_ += (uint32_t)msg.size();
     }
 
     auto keeper = std::make_unique<detail::message>(std::move(msg));
     auto buffer = asio::buffer(keeper->body);
     asio::async_write(serial_, buffer, [this, keeper = std::move(keeper)](const std::error_code& ec, std::size_t /*length*/) {
-      send_buffer_now_ -= keeper->body.size();
+      send_buffer_now_ -= (uint32_t)keeper->body.size();
       if (ec) {
         do_close();
       }

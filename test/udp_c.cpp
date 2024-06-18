@@ -10,7 +10,7 @@ int main() {
   udp_client client(context);
   udp_client::endpoint endpoint(asio::ip::address_v4::from_string("127.0.0.1"), PORT);
   client.send_to("hello", endpoint, [&](const std::error_code& ec, std::size_t size) {
-    LOG("result: ec: %d, size: %lu", ec.value(), size);
+    LOG("result: ec: %d, size: %zu", ec.value(), size);
   });
   context.run();
   return EXIT_SUCCESS;

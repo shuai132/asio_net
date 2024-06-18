@@ -234,7 +234,7 @@ class tcp_channel_t : private noncopyable {
   typename socket_impl<T>::socket& socket_;
   const tcp_config& config_;
   detail::message read_msg_;
-  uint32_t send_buffer_now_ = 0;
+  size_t send_buffer_now_ = 0;
   std::deque<std::string> write_msg_queue_;
 };
 
