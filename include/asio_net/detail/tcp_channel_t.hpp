@@ -95,7 +95,9 @@ class tcp_channel_t : private noncopyable {
             do_close();
             return;
           } else if (ec || size == 0) {
-            ASIO_NET_LOGW("do_read_header: %s, size: %zu", ec.message().c_str(), size);
+            if (ec != asio::error::operation_aborted) {
+              ASIO_NET_LOGE("do_read_header: %s, size: %zu", ec.message().c_str(), size);
+            }
             do_close();
             return;
           }
@@ -120,7 +122,9 @@ class tcp_channel_t : private noncopyable {
             do_close();
             return;
           } else if (ec || size == 0) {
-            ASIO_NET_LOGW("do_read_body: %s, size: %zu", ec.message().c_str(), size);
+            if (ec != asio::error::operation_aborted) {
+              ASIO_NET_LOGE("do_read_body: %s, size: %zu", ec.message().c_str(), size);
+            }
             do_close();
             return;
           }
@@ -207,7 +211,7 @@ class tcp_channel_t : private noncopyable {
     asio::error_code ec;
     get_socket().close(ec);
     if (ec) {
-      ASIO_NET_LOGW("do_close: %s", ec.message().c_str());
+      ASIO_NET_LOGE("do_close: %s", ec.message().c_str());
     }
     if (on_close) on_close();
   }

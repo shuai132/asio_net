@@ -131,7 +131,7 @@ class serial_port : detail::noncopyable {
     asio::error_code ec;
     serial_.close(ec);
     if (ec) {
-      ASIO_NET_LOGW("do_close: %s", ec.message().c_str());
+      ASIO_NET_LOGE("do_close: %s", ec.message().c_str());
     }
     if (on_close) on_close();
   }

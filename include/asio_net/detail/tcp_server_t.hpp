@@ -103,7 +103,7 @@ inline void tcp_server_t<socket_type::normal>::do_accept<socket_type::normal>() 
       session->start();
       if (on_session) on_session(session);
       tcp_server_t<socket_type::normal>::do_accept<socket_type::normal>();
-    } else {
+    } else if (ec != asio::error::operation_aborted) {
       ASIO_NET_LOGE("do_accept: %s", ec.message().c_str());
     }
   });
@@ -118,7 +118,7 @@ inline void tcp_server_t<socket_type::domain>::do_accept<socket_type::domain>() 
       session->start();
       if (on_session) on_session(session);
       tcp_server_t<socket_type::domain>::do_accept<socket_type::domain>();
-    } else {
+    } else if (ec != asio::error::operation_aborted) {
       ASIO_NET_LOGE("do_accept: %s", ec.message().c_str());
     }
   });
@@ -140,7 +140,7 @@ inline void tcp_server_t<socket_type::ssl>::do_accept<socket_type::ssl>() {
         }
       });
       do_accept<socket_type::ssl>();
-    } else {
+    } else if (ec != asio::error::operation_aborted) {
       ASIO_NET_LOGE("do_accept: %s", ec.message().c_str());
     }
   });
