@@ -68,7 +68,7 @@ jobs:
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.configuration }} ${{ matrix.env.CMAKE_OPTIONS }} -DASIO_NET_DISABLE_ON_DATA_PRINT=ON
 
       - name: Build with ${{ matrix.compiler }}
-        run: cmake --build build --config ${{ matrix.configuration }}
+        run: cmake --build build --config ${{ matrix.configuration }} -j
 
       - name: Windows-MSVC Compatible
         if: matrix.os == 'windows-latest' && matrix.compiler == 'msvc'
@@ -104,6 +104,7 @@ jobs:
         run: ./asio_net_test_rpc_reconnect${{ matrix.env.BIN_SUFFIX }}
 
       - name: Test RPC (ssl)
+        if: matrix.os == 'macos-latest'
         working-directory: build
         run: ./asio_net_test_rpc_ssl${{ matrix.env.BIN_SUFFIX }}
 

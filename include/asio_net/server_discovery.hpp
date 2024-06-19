@@ -73,8 +73,8 @@ class receiver {
           service_found_handle_(std::move(msgs[1]), std::move(msgs[2]));
         }
         do_receive();
-      } else if (ec != asio::error::operation_aborted) {
-        ASIO_NET_LOGE("server_discovery: receive: err: %s", ec.message().c_str());
+      } else {
+        ASIO_NET_LOGD("server_discovery: receive: %s", ec.message().c_str());
       }
     });
   }

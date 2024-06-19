@@ -45,8 +45,8 @@ class udp_server_t : private noncopyable {
       if (!ec && length > 0) {
         if (on_data) on_data((uint8_t*)data_.data(), length, from_endpoint_);
         do_receive();
-      } else if (ec != asio::error::operation_aborted) {
-        ASIO_NET_LOGE("udp_server error: %s", ec.message().c_str());
+      } else {
+        ASIO_NET_LOGD("udp_server error: %s", ec.message().c_str());
       }
     });
   }

@@ -75,6 +75,8 @@ int main(int argc, char** argv) {
     client.open(ENDPOINT);
     client.run();
   }).join();
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
   ASSERT(pass_flag_session_close);
   ASSERT(pass_flag_client_close);
   return EXIT_SUCCESS;

@@ -50,7 +50,7 @@ class rpc_session_t : noncopyable, public std::enable_shared_from_this<rpc_sessi
       if (tcp_session) {
         tcp_session->send(std::move(data));
       } else {
-        ASIO_NET_LOGW("tcp_session expired on sendPackage");
+        ASIO_NET_LOGW("tcp_session expired");
       }
     };
 
