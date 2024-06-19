@@ -65,7 +65,7 @@ jobs:
       - name: Configure (${{ matrix.configuration }})
         env:
           ASIO_PATH: asio/asio/include
-        run: cmake -S . -B build -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_BUILD_TYPE=${{ matrix.configuration }} ${{ matrix.env.CMAKE_OPTIONS }} -DASIO_NET_DISABLE_ON_DATA_PRINT=ON
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.configuration }} ${{ matrix.env.CMAKE_OPTIONS }} -DASIO_NET_DISABLE_ON_DATA_PRINT=ON
 
       - name: Build with ${{ matrix.compiler }}
         run: cmake --build build --config ${{ matrix.configuration }}
@@ -105,18 +105,19 @@ jobs:
 
       - name: Test RPC (ssl)
         working-directory: build
-        run: |
-          #./asio_net_test_rpc_ssl${{ matrix.env.BIN_SUFFIX }}
-          echo "skip for avoid wait too long"
+        run: ./asio_net_test_rpc_ssl${{ matrix.env.BIN_SUFFIX }}
 
       - name: Test Domain TCP
+        if: matrix.os != 'windows-latest'
         working-directory: build
         run: ./asio_net_test_domain_tcp${{ matrix.env.BIN_SUFFIX }}
 
       - name: Test Domain UDP
+        if: matrix.os != 'windows-latest'
         working-directory: build
         run: ./asio_net_test_domain_udp${{ matrix.env.BIN_SUFFIX }}
 
       - name: Test Domain RPC
+        if: matrix.os != 'windows-latest'
         working-directory: build
         run: ./asio_net_test_domain_rpc${{ matrix.env.BIN_SUFFIX }}
