@@ -23,7 +23,7 @@ int main() {
   // server
   std::thread([] {
     asio::io_context context;
-    static domain_rpc_server server(context, ENDPOINT);  // static for test session lifecycle
+    domain_rpc_server server(context, ENDPOINT);  // static for test session lifecycle
     server.on_session = [](const std::weak_ptr<domain_rpc_session>& rs) {
       LOG("on_session:");
       auto session = rs.lock();
@@ -46,7 +46,7 @@ int main() {
   // client
   std::thread([] {
     asio::io_context context;
-    static domain_rpc_client client(context);  // static for test session lifecycle
+    domain_rpc_client client(context);  // static for test session lifecycle
     client.on_open = [&](const std::shared_ptr<rpc_core::rpc>& rpc) {
       LOG("client on_open:");
       rpc->cmd("cmd")
