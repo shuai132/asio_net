@@ -31,7 +31,7 @@ int main() {
       ssl_context.use_private_key_file(OPENSSL_PEM_PATH "server.pem", asio::ssl::context::pem);
       ssl_context.use_tmp_dh_file(OPENSSL_PEM_PATH "dh4096.pem");
     }
-    rpc_server_ssl server(context, PORT, ssl_context);  // static for test session lifecycle
+    rpc_server_ssl server(context, PORT, ssl_context);
     server.on_session = [](const std::weak_ptr<rpc_session_ssl>& rs) {
       LOG("on_session:");
       auto session = rs.lock();
@@ -56,7 +56,7 @@ int main() {
     asio::io_context context;
     asio::ssl::context ssl_context(asio::ssl::context::sslv23);
     ssl_context.load_verify_file(OPENSSL_PEM_PATH "ca.pem");
-    rpc_client_ssl client(context, ssl_context);  // static for test session lifecycle
+    rpc_client_ssl client(context, ssl_context);
     client.on_open = [&](const std::shared_ptr<rpc_core::rpc>& rpc) {
       LOG("client on_open:");
       rpc->cmd("cmd")

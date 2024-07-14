@@ -1,6 +1,8 @@
 # asio_net
 
 [![Build Status](https://github.com/shuai132/asio_net/workflows/build/badge.svg)](https://github.com/shuai132/asio_net/actions?workflow=build)
+[![Release](https://img.shields.io/github/release/shuai132/asio_net.svg)](https://github.com/shuai132/asio_net/releases)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 a tiny Async TCP/UDP/RPC library based on [asio](http://think-async.com/Asio/)
 and [rpc_core](https://github.com/shuai132/rpc_core)
@@ -11,11 +13,12 @@ and [rpc_core](https://github.com/shuai132/rpc_core)
 * TCP/UDP support, rely on: [asio](http://think-async.com/Asio/)
 * RPC support, rely on: [rpc_core](https://github.com/shuai132/rpc_core)
 * Service discovery based on UDP multicast
-* Support IPv6 and SSL (with OpenSSL)
+* Support both IPv4 and IPv6
+* Support SSL/TLS (with OpenSSL)
 * Support domain socket and rpc
 * Support serial port
-* Comprehensive unittests
 * Automatic reconnection
+* Comprehensive unittests
 
 Options:
 

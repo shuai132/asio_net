@@ -55,7 +55,7 @@ jobs:
               CMAKE_OPTIONS: "-G \"MinGW Makefiles\""
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
 
