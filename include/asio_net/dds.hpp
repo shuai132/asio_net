@@ -11,6 +11,9 @@ namespace asio_net {
 namespace dds {
 
 using rpc_s = std::shared_ptr<rpc_core::rpc>;
+using rpc_w = std::weak_ptr<rpc_core::rpc>;
+using handle_t = std::function<void(std::string msg)>;
+using handle_s = std::shared_ptr<handle_t>;
 
 struct Msg {
   std::string topic;
@@ -41,17 +44,19 @@ class dds_server {
       rpc->subscribe("update_topic_list", [this, rpc](const std::vector<std::string>& topic_list) {
         update_topic_list(rpc, topic_list);
       });
-      rpc->subscribe("publish", [this](const dds::Msg& msg) {
-        publish(msg);
+      rpc->subscribe("publish", [this, rpc_wp = dds::rpc_w(rpc)](const dds::Msg& msg) {
+        publish(msg, rpc_wp);
       });
     };
   }
 
-  void publish(const dds::Msg& msg) {
+  void publish(const dds::Msg& msg, const dds::rpc_w& from_rpc) {
     auto it = topic_rpc_map.find(msg.topic);
     if (it != topic_rpc_map.cend()) {
+      auto from_rpc_sp = from_rpc.lock();
       for (const auto& rpc : it->second) {
-        rpc->cmd("publish")->msg(msg)->call();
+        if (rpc == from_rpc_sp) continue;
+        rpc->cmd("publish")->msg(msg)->retry(-1)->call();
       }
     }
   }
@@ -89,35 +94,65 @@ class dds_client {
  public:
   explicit dds_client(asio::io_context& io_context) : client(io_context, rpc_config{.rpc = rpc}) {
     client.on_open = [&](const std::shared_ptr<rpc_core::rpc>&) {
-      rpc->cmd("update_topic_list")->msg(topic_list)->retry(-1)->call();
       rpc->subscribe("publish", [this](const dds::Msg& msg) {
         dispatch_publish(msg);
       });
+      update_topic_list();
     };
   }
 
-  void publish(std::string topic, std::string data) {
+  void publish(std::string topic, std::string data = "") {
     auto msg = dds::Msg{.topic = std::move(topic), .data = std::move(data)};
+    dispatch_publish(msg);
     rpc->cmd("publish")->msg(std::move(msg))->call();
   }
 
-  void subscribe(std::string topic, std::function<void(std::string msg)> handle) {
-    auto it = topic_handle_map.find(topic);
-    if (it == topic_handle_map.cend()) {
-      topic_handle_map[topic] = std::move(handle);
-      topic_list.push_back(std::move(topic));
-      rpc->cmd("update_topic_list")->msg(topic_list)->retry(-1)->call();
+  uintptr_t subscribe(const std::string& topic, dds::handle_t handle) {
+    auto it = topic_handles_map.find(topic);
+    auto handle_sp = std::make_shared<dds::handle_t>(std::move(handle));
+    auto handle_id = (uintptr_t)handle_sp.get();
+    if (it == topic_handles_map.cend()) {
+      topic_handles_map[topic].push_back(std::move(handle_sp));
+      update_topic_list();
     } else {
-      it->second = std::move(handle);
+      it->second.push_back(std::move(handle_sp));
+    }
+    return handle_id;
+  }
+
+  bool unsubscribe(const std::string& topic) {
+    auto it = topic_handles_map.find(topic);
+    if (it != topic_handles_map.cend()) {
+      topic_handles_map.erase(it);
+      update_topic_list();
+      return true;
+    } else {
+      return false;
     }
   }
 
-  void unsubscribe(const std::string& topic) {
-    auto it = topic_handle_map.find(topic);
-    if (it != topic_handle_map.cend()) {
-      topic_handle_map.erase(it);
-      topic_list.erase(std::remove(topic_list.begin(), topic_list.end(), topic), topic_list.end());
-      rpc->cmd("update_topic_list")->msg(topic_list)->retry(-1)->call();
+  bool unsubscribe(uintptr_t handle_id) {
+    auto it = std::find_if(topic_handles_map.begin(), topic_handles_map.end(), [id = handle_id](auto& p) {
+      auto& vec = p.second;
+      auto len_before = vec.size();
+      vec.erase(std::remove_if(vec.begin(), vec.end(),
+                               [id](auto& sp) {
+                                 return (uintptr_t)sp.get() == id;
+                               }),
+                vec.end());
+      auto len_after = vec.size();
+      return len_before != len_after;
+    });
+    if (it != topic_handles_map.end()) {
+      ASIO_NET_LOGD("unsubscribe: id: %zu", handle_id);
+      if (it->second.empty()) {
+        topic_handles_map.erase(it);
+        update_topic_list();
+      }
+      return true;
+    } else {
+      ASIO_NET_LOGD("unsubscribe: no such id: %zu", handle_id);
+      return false;
     }
   }
 
@@ -132,18 +167,28 @@ class dds_client {
 
  private:
   void dispatch_publish(const dds::Msg& msg) {
-    auto it = topic_handle_map.find(msg.topic);
-    if (it != topic_handle_map.cend()) {
-      auto& handle = it->second;
-      handle(msg.data);
+    auto it = topic_handles_map.find(msg.topic);
+    if (it != topic_handles_map.cend()) {
+      auto& handles = it->second;
+      for (const auto& handle : handles) {
+        (*handle)(msg.data);
+      }
     }
+  }
+
+  void update_topic_list() {
+    std::vector<std::string> topic_list;
+    topic_list.reserve(topic_handles_map.size());
+    for (const auto& kv : topic_handles_map) {
+      topic_list.push_back(kv.first);
+    }
+    rpc->cmd("update_topic_list")->msg(topic_list)->retry(-1)->call();
   }
 
  private:
   std::shared_ptr<rpc_core::rpc> rpc = rpc_core::rpc::create();
   rpc_client client;
-  std::vector<std::string> topic_list;
-  std::unordered_map<std::string, std::function<void(std::string msg)>> topic_handle_map;
+  std::unordered_map<std::string, std::vector<std::shared_ptr<dds::handle_t>>> topic_handles_map;
 };
 
 }  // namespace asio_net
