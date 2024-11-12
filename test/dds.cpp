@@ -1,9 +1,8 @@
-#include "asio_net/dds.hpp"
-
 #include <cstdio>
 #include <cstdlib>
 #include <thread>
 
+#include "asio_net.hpp"
 #include "assert_def.h"
 #include "log.h"
 
@@ -11,9 +10,13 @@ using namespace asio_net;
 
 #ifdef TEST_DDS_DOMAIN
 const char* ENDPOINT = "/tmp/foobar";
-#elif defined(TEST_DDS_NORMAL) || defined(TEST_DDS_SSL)
+#elif defined(TEST_DDS_NORMAL)
 const uint16_t PORT = 6666;
+#elif defined(TEST_DDS_SSL)
+const uint16_t PORT = 6667;
 #endif
+
+static const int interval_ms = 1000;
 
 static std::atomic_bool received_flag[3]{};
 static std::atomic_int received_all_cnt{0};
@@ -80,8 +83,6 @@ static void init_client() {
   }
 }
 
-static const int interval_ms = 1000;
-
 #if 1  // IDE
 #ifdef TEST_DDS_DOMAIN
 static void interval_check(domain_dds_client& client) {
@@ -146,6 +147,7 @@ int main() {
   ::unlink(ENDPOINT);
 #endif
   init_server();
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));  // wait server ready
   init_client();
 
   asio::io_context context;

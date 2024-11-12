@@ -25,4 +25,5 @@
 #include "asio_net/serial_port.hpp"
 
 // dds
-#include "asio_net/dds.hpp"
+#include "asio_net/dds_client.hpp"
+#include "asio_net/dds_server.hpp"
