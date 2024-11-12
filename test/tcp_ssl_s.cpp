@@ -11,9 +11,11 @@ int main() {
   asio::ssl::context ssl_context(asio::ssl::context::sslv23);
   {
     ssl_context.set_options(asio::ssl::context::default_workarounds | asio::ssl::context::no_sslv2 | asio::ssl::context::single_dh_use);
-    ssl_context.set_password_callback(std::bind([] {  // NOLINT
+    ssl_context.set_password_callback([](std::size_t size, asio::ssl::context_base::password_purpose purpose) {
+      (void)(size);
+      (void)(purpose);
       return "test";
-    }));
+    });
     ssl_context.use_certificate_chain_file(OPENSSL_PEM_PATH "server.pem");
     ssl_context.use_private_key_file(OPENSSL_PEM_PATH "server.pem", asio::ssl::context::pem);
     ssl_context.use_tmp_dh_file(OPENSSL_PEM_PATH "dh4096.pem");

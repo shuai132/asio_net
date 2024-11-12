@@ -37,7 +37,9 @@ class rpc_client_t : noncopyable {
 
 #ifdef ASIO_NET_ENABLE_SSL
   explicit rpc_client_t(asio::io_context& io_context, asio::ssl::context& ssl_context, rpc_config rpc_config = {})
-      : io_context_(io_context), client_(std::make_shared<detail::tcp_client_t<T>>(io_context, ssl_context, rpc_config.to_tcp_config())) {
+      : io_context_(io_context),
+        rpc_config_(rpc_config),
+        client_(std::make_shared<detail::tcp_client_t<T>>(io_context, ssl_context, rpc_config.to_tcp_config())) {
     client_->on_open = [this]() {
       auto session = std::make_shared<rpc_session_t<T>>(io_context_, rpc_config_);
       rpc_session_ = session;

@@ -9,7 +9,11 @@
 
 using namespace asio_net;
 
+#ifdef TEST_DDS_DOMAIN
+const char* ENDPOINT = "/tmp/foobar";
+#elif defined(TEST_DDS_NORMAL) || defined(TEST_DDS_SSL)
 const uint16_t PORT = 6666;
+#endif
 
 static std::atomic_bool received_flag[3]{};
 static std::atomic_int received_all_cnt{0};
@@ -17,7 +21,25 @@ static std::atomic_int received_all_cnt{0};
 static void init_server() {
   std::thread([] {
     asio::io_context context;
+#ifdef TEST_DDS_DOMAIN
+    domain_dds_server server(context, ENDPOINT);
+#elif defined(TEST_DDS_SSL)
+    asio::ssl::context ssl_context(asio::ssl::context::sslv23);
+    {
+      ssl_context.set_options(asio::ssl::context::default_workarounds | asio::ssl::context::no_sslv2 | asio::ssl::context::single_dh_use);
+      ssl_context.set_password_callback([](std::size_t size, asio::ssl::context_base::password_purpose purpose) {
+        (void)(size);
+        (void)(purpose);
+        return "test";
+      });
+      ssl_context.use_certificate_chain_file(OPENSSL_PEM_PATH "server.pem");
+      ssl_context.use_private_key_file(OPENSSL_PEM_PATH "server.pem", asio::ssl::context::pem);
+      ssl_context.use_tmp_dh_file(OPENSSL_PEM_PATH "dh4096.pem");
+    }
+    dds_server_ssl server(context, PORT, ssl_context);
+#elif defined(TEST_DDS_NORMAL)
     dds_server server(context, PORT);
+#endif
     server.start(true);
   }).detach();
 }
@@ -26,7 +48,15 @@ static void init_client() {
   for (int i = 0; i < 3; ++i) {
     std::thread([i] {
       asio::io_context context;
+#ifdef TEST_DDS_DOMAIN
+      domain_dds_client client(context);
+#elif defined(TEST_DDS_SSL)
+      asio::ssl::context ssl_context(asio::ssl::context::sslv23);
+      ssl_context.load_verify_file(OPENSSL_PEM_PATH "ca.pem");
+      dds_client_ssl client(context, ssl_context);
+#elif defined(TEST_DDS_NORMAL)
       dds_client client(context);
+#endif
       client.subscribe("topic_all", [i](const std::string& data) {
         LOG("client_%d: topic:%s, data:%s", i, "topic_all", data.c_str());
         ++received_all_cnt;
@@ -38,17 +68,35 @@ static void init_client() {
         ASSERT(!received_flag[i]);
         received_flag[i] = true;
       });
+#ifdef TEST_DDS_DOMAIN
+      client.open(ENDPOINT);
+#elif defined(TEST_DDS_SSL)
       client.open("localhost", PORT);
+#elif defined(TEST_DDS_NORMAL)
+      client.open("localhost", PORT);
+#endif
       client.run();
     }).detach();
   }
 }
 
 static const int interval_ms = 1000;
+
+#if 1  // IDE
+#ifdef TEST_DDS_DOMAIN
+static void interval_check(domain_dds_client& client) {
+#elif defined(TEST_DDS_SSL)
+static void interval_check(dds_client_ssl& client) {
+#elif defined(TEST_DDS_NORMAL)
 static void interval_check(dds_client& client) {
+#endif
+#else
+static auto interval_check = [](auto& client) {
+#endif
   /// 1. test basic
   static bool first_run = true;
   static std::atomic_bool received_flag_self{false};
+  LOG("test... %d", first_run);
   if (first_run) {
     first_run = false;
     client.subscribe("topic_self", [](const std::string& msg) {
@@ -91,15 +139,28 @@ static void interval_check(dds_client& client) {
   });
   client.unsubscribe(id);
   client.publish("topic_test_1");
-}
+};
 
 int main() {
+#ifdef TEST_DDS_DOMAIN
+  ::unlink(ENDPOINT);
+#endif
   init_server();
   init_client();
 
   asio::io_context context;
+#ifdef TEST_DDS_DOMAIN
+  domain_dds_client client(context);
+  client.open(ENDPOINT);
+#elif defined(TEST_DDS_SSL)
+  asio::ssl::context ssl_context(asio::ssl::context::sslv23);
+  ssl_context.load_verify_file(OPENSSL_PEM_PATH "ca.pem");
+  dds_client_ssl client(context, ssl_context);
+  client.open("localhost", PORT);
+#elif defined(TEST_DDS_NORMAL)
   dds_client client(context);
   client.open("localhost", PORT);
+#endif
 
   std::function<void()> time_task;
   asio::steady_timer timer(context);
