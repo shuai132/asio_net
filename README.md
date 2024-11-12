@@ -4,14 +4,15 @@
 [![Release](https://img.shields.io/github/release/shuai132/asio_net.svg)](https://github.com/shuai132/asio_net/releases)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-a tiny Async TCP/UDP/RPC library based on [asio](http://think-async.com/Asio/)
+a tiny Async TCP/UDP/RPC/DDS library based on [asio](http://think-async.com/Asio/)
 and [rpc_core](https://github.com/shuai132/rpc_core)
 
 ## Features
 
 * Header-Only
-* TCP/UDP support, rely on: [asio](http://think-async.com/Asio/)
-* RPC support, rely on: [rpc_core](https://github.com/shuai132/rpc_core)
+* TCP/UDP support, depend: [asio](http://think-async.com/Asio/)
+* RPC support, depend: [rpc_core](https://github.com/shuai132/rpc_core)
+* DDS support, via socket/SSL, domain socket
 * Service discovery based on UDP multicast
 * Support both IPv4 and IPv6
 * Support SSL/TLS (with OpenSSL)
@@ -137,6 +138,26 @@ please refer to the source code: [test](test)
   };
   client.on_close = [] {
   };
+  client.open("localhost", PORT);
+  client.run();
+```
+
+* DDS
+
+```c++
+  // run a server as daemon
+  asio::io_context context;
+  dds_server server(context, PORT);
+  server.start(true);
+```
+
+```c++
+  // client
+  asio::io_context context;
+  dds_client client(context);
+  client.subscribe("topic", [](const std::string& data) {
+  });
+  client.publish("topic", "message");
   client.open("localhost", PORT);
   client.run();
 ```
