@@ -11,12 +11,13 @@ namespace asio_net {
 template <detail::socket_type T>
 class dds_client_t {
  public:
-  explicit dds_client_t(asio::io_context& io_context) : client(io_context, rpc_config{.rpc = rpc}) {
+  explicit dds_client_t(asio::io_context& io_context) : io_context(io_context), client(io_context, rpc_config{.rpc = rpc}) {
     init();
   }
 
 #ifdef ASIO_NET_ENABLE_SSL
-  explicit dds_client_t(asio::io_context& io_context, asio::ssl::context& ssl_context) : client(io_context, ssl_context, rpc_config{.rpc = rpc}) {
+  explicit dds_client_t(asio::io_context& io_context, asio::ssl::context& ssl_context)
+      : io_context(io_context), client(io_context, ssl_context, rpc_config{.rpc = rpc}) {
     init();
   }
 #endif
@@ -88,18 +89,38 @@ class dds_client_t {
     client.open(std::move(endpoint));
   }
 
+  void close() {
+    client.close();
+  }
+
   void run() {
     client.run();
   }
 
+  void reset_reconnect(uint32_t ms) {
+    client.set_reconnect(ms);
+  }
+
+  void wait_open() {
+    while (!is_open) {
+      io_context.run_one();
+    }
+  }
+
  private:
   void init() {
-    client.on_open = [&](const std::shared_ptr<rpc_core::rpc>&) {
+    client.on_open = [this](const dds::rpc_s&) {
       ASIO_NET_LOGD("dds_client_t<%d>: on_open", (int)T);
       rpc->subscribe("publish", [this](const dds::Msg& msg) {
         dispatch_publish(msg);
       });
       update_topic_list();
+      if (on_open) on_open();
+      is_open = true;
+    };
+    client.on_close = [this] {
+      if (on_close) on_close();
+      is_open = false;
     };
   }
 
@@ -122,10 +143,16 @@ class dds_client_t {
     rpc->cmd("update_topic_list")->msg(topic_list)->retry(-1)->call();
   }
 
+ public:
+  std::function<void()> on_open;
+  std::function<void()> on_close;
+  bool is_open = false;
+
  private:
-  std::shared_ptr<rpc_core::rpc> rpc = rpc_core::rpc::create();
+  asio::io_context& io_context;
+  dds::rpc_s rpc = rpc_core::rpc::create();
   detail::rpc_client_t<T> client;
-  std::unordered_map<std::string, std::vector<std::shared_ptr<dds::handle_t>>> topic_handles_map;
+  std::unordered_map<std::string, std::vector<dds::handle_s>> topic_handles_map;
 };
 
 using dds_client = dds_client_t<detail::socket_type::normal>;

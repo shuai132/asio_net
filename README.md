@@ -155,10 +155,10 @@ please refer to the source code: [test](test)
   // client
   asio::io_context context;
   dds_client client(context);
+  client.open("localhost", PORT);
   client.subscribe("topic", [](const std::string& data) {
   });
-  client.publish("topic", "message");
-  client.open("localhost", PORT);
+  client.publish("topic", "string/binary");
   client.run();
 ```
 

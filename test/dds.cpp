@@ -53,13 +53,20 @@ static void init_client() {
       asio::io_context context;
 #ifdef TEST_DDS_DOMAIN
       domain_dds_client client(context);
+      client.open(ENDPOINT);
 #elif defined(TEST_DDS_SSL)
       asio::ssl::context ssl_context(asio::ssl::context::sslv23);
       ssl_context.load_verify_file(OPENSSL_PEM_PATH "ca.pem");
       dds_client_ssl client(context, ssl_context);
+      client.open("localhost", PORT);
 #elif defined(TEST_DDS_NORMAL)
       dds_client client(context);
+      client.open("localhost", PORT);
 #endif
+      // ensure open for unittest
+      client.reset_reconnect(0);
+      client.wait_open();
+
       client.subscribe("topic_all", [i](const std::string& data) {
         LOG("client_%d: topic:%s, data:%s", i, "topic_all", data.c_str());
         ++received_all_cnt;
@@ -71,13 +78,6 @@ static void init_client() {
         ASSERT(!received_flag[i]);
         received_flag[i] = true;
       });
-#ifdef TEST_DDS_DOMAIN
-      client.open(ENDPOINT);
-#elif defined(TEST_DDS_SSL)
-      client.open("localhost", PORT);
-#elif defined(TEST_DDS_NORMAL)
-      client.open("localhost", PORT);
-#endif
       client.run();
     }).detach();
   }
@@ -147,7 +147,7 @@ int main() {
   ::unlink(ENDPOINT);
 #endif
   init_server();
-  std::this_thread::sleep_for(std::chrono::milliseconds(10));  // wait server ready
+  // std::this_thread::sleep_for(std::chrono::milliseconds(10));  // wait server ready
   init_client();
 
   asio::io_context context;
@@ -163,6 +163,9 @@ int main() {
   dds_client client(context);
   client.open("localhost", PORT);
 #endif
+  // ensure open for unittest
+  client.reset_reconnect(0);
+  client.wait_open();
 
   std::function<void()> time_task;
   asio::steady_timer timer(context);
