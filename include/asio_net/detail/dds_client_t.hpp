@@ -97,6 +97,10 @@ class dds_client_t {
     client.run();
   }
 
+  void stop() {
+    client.stop();
+  }
+
   void reset_reconnect(uint32_t ms) {
     client.set_reconnect(ms);
   }

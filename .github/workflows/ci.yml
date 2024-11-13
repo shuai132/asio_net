@@ -122,3 +122,17 @@ jobs:
         if: matrix.os != 'windows-latest'
         working-directory: build
         run: ./asio_net_test_domain_rpc${{ matrix.env.BIN_SUFFIX }}
+
+      - name: Test DDS
+        working-directory: build
+        run: ./asio_net_test_dds${{ matrix.env.BIN_SUFFIX }} 1
+
+      - name: Test DDS (ssl)
+        if: matrix.os != 'windows-latest'
+        working-directory: build
+        run: ./asio_net_test_dds_ssl${{ matrix.env.BIN_SUFFIX }} 1
+
+      - name: Test DDS (domain)
+        if: matrix.os != 'windows-latest'
+        working-directory: build
+        run: ./asio_net_test_domain_dds${{ matrix.env.BIN_SUFFIX }} 1

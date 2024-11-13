@@ -16,7 +16,8 @@ const uint16_t PORT = 6666;
 const uint16_t PORT = 6667;
 #endif
 
-static const int interval_ms = 1000;
+static int interval_ms = 1000;
+static bool run_once = false;
 
 static std::atomic_bool received_flag[3]{};
 static std::atomic_int received_all_cnt{0};
@@ -117,6 +118,10 @@ static auto interval_check = [](auto& client) {
 
     ASSERT(received_flag_self);
     received_flag_self = false;
+
+    if (run_once) {
+      client.stop();
+    }
   }
 
   client.publish("topic_self", "to client_self");
@@ -142,7 +147,14 @@ static auto interval_check = [](auto& client) {
   client.publish("topic_test_1");
 };
 
-int main() {
+int main(int argc, char* argv[]) {
+  (void)(argv);
+  run_once = argc >= 2;
+  // run_once = true;
+  if (run_once) {
+    interval_ms = 100;
+  }
+
 #ifdef TEST_DDS_DOMAIN
   ::unlink(ENDPOINT);
 #endif
