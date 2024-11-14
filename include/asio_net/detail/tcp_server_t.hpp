@@ -79,7 +79,10 @@ class tcp_server_t {
 
  public:
   std::function<void(std::weak_ptr<tcp_session_t<T>>)> on_session;
+
+#ifdef ASIO_NET_ENABLE_SSL
   std::function<void(std::error_code)> on_handshake_error;
+#endif
 
  private:
   template <socket_type>

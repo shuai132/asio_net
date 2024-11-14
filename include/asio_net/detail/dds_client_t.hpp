@@ -11,13 +11,13 @@ namespace asio_net {
 template <detail::socket_type T>
 class dds_client_t {
  public:
-  explicit dds_client_t(asio::io_context& io_context) : io_context(io_context), client(io_context, rpc_config{.rpc = rpc}) {
+  explicit dds_client_t(asio::io_context& io_context) : io_context_(io_context), client_(io_context, rpc_config{.rpc = rpc_}) {
     init();
   }
 
 #ifdef ASIO_NET_ENABLE_SSL
   explicit dds_client_t(asio::io_context& io_context, asio::ssl::context& ssl_context)
-      : io_context(io_context), client(io_context, ssl_context, rpc_config{.rpc = rpc}) {
+      : io_context_(io_context), client_(io_context, ssl_context, rpc_config{.rpc = rpc_}) {
     init();
   }
 #endif
@@ -25,15 +25,15 @@ class dds_client_t {
   void publish(std::string topic, std::string data = "") {
     auto msg = dds::Msg{.topic = std::move(topic), .data = std::move(data)};
     dispatch_publish(msg);
-    rpc->cmd("publish")->msg(std::move(msg))->call();
+    rpc_->cmd("publish")->msg(std::move(msg))->call();
   }
 
   uintptr_t subscribe(const std::string& topic, dds::handle_t handle) {
-    auto it = topic_handles_map.find(topic);
+    auto it = topic_handles_map_.find(topic);
     auto handle_sp = std::make_shared<dds::handle_t>(std::move(handle));
     auto handle_id = (uintptr_t)handle_sp.get();
-    if (it == topic_handles_map.cend()) {
-      topic_handles_map[topic].push_back(std::move(handle_sp));
+    if (it == topic_handles_map_.cend()) {
+      topic_handles_map_[topic].push_back(std::move(handle_sp));
       update_topic_list();
     } else {
       it->second.push_back(std::move(handle_sp));
@@ -42,9 +42,9 @@ class dds_client_t {
   }
 
   bool unsubscribe(const std::string& topic) {
-    auto it = topic_handles_map.find(topic);
-    if (it != topic_handles_map.cend()) {
-      topic_handles_map.erase(it);
+    auto it = topic_handles_map_.find(topic);
+    if (it != topic_handles_map_.cend()) {
+      topic_handles_map_.erase(it);
       update_topic_list();
       return true;
     } else {
@@ -53,7 +53,7 @@ class dds_client_t {
   }
 
   bool unsubscribe(uintptr_t handle_id) {
-    auto it = std::find_if(topic_handles_map.begin(), topic_handles_map.end(), [id = handle_id](auto& p) {
+    auto it = std::find_if(topic_handles_map_.begin(), topic_handles_map_.end(), [id = handle_id](auto& p) {
       auto& vec = p.second;
       auto len_before = vec.size();
       vec.erase(std::remove_if(vec.begin(), vec.end(),
@@ -64,10 +64,10 @@ class dds_client_t {
       auto len_after = vec.size();
       return len_before != len_after;
     });
-    if (it != topic_handles_map.end()) {
+    if (it != topic_handles_map_.end()) {
       ASIO_NET_LOGD("unsubscribe: id: %zu", handle_id);
       if (it->second.empty()) {
-        topic_handles_map.erase(it);
+        topic_handles_map_.erase(it);
         update_topic_list();
       }
       return true;
@@ -79,58 +79,58 @@ class dds_client_t {
 
   void open(std::string ip, uint16_t port) {
     static_assert(T == detail::socket_type::normal || T == detail::socket_type::ssl, "");
-    client.set_reconnect(1000);
-    client.open(std::move(ip), port);
+    client_.set_reconnect(1000);
+    client_.open(std::move(ip), port);
   }
 
   void open(std::string endpoint) {
     static_assert(T == detail::socket_type::domain, "");
-    client.set_reconnect(1000);
-    client.open(std::move(endpoint));
+    client_.set_reconnect(1000);
+    client_.open(std::move(endpoint));
   }
 
   void close() {
-    client.close();
+    client_.close();
   }
 
   void run() {
-    client.run();
+    client_.run();
   }
 
   void stop() {
-    client.stop();
+    client_.stop();
   }
 
   void reset_reconnect(uint32_t ms) {
-    client.set_reconnect(ms);
+    client_.set_reconnect(ms);
   }
 
   void wait_open() {
     while (!is_open) {
-      io_context.run_one();
+      io_context_.run_one();
     }
   }
 
  private:
   void init() {
-    client.on_open = [this](const dds::rpc_s&) {
+    client_.on_open = [this](const dds::rpc_s&) {
       ASIO_NET_LOGD("dds_client_t<%d>: on_open", (int)T);
-      rpc->subscribe("publish", [this](const dds::Msg& msg) {
+      rpc_->subscribe("publish", [this](const dds::Msg& msg) {
         dispatch_publish(msg);
       });
       update_topic_list();
       if (on_open) on_open();
       is_open = true;
     };
-    client.on_close = [this] {
+    client_.on_close = [this] {
       if (on_close) on_close();
       is_open = false;
     };
   }
 
   void dispatch_publish(const dds::Msg& msg) {
-    auto it = topic_handles_map.find(msg.topic);
-    if (it != topic_handles_map.cend()) {
+    auto it = topic_handles_map_.find(msg.topic);
+    if (it != topic_handles_map_.cend()) {
       auto& handles = it->second;
       for (const auto& handle : handles) {
         (*handle)(msg.data);
@@ -140,11 +140,11 @@ class dds_client_t {
 
   void update_topic_list() {
     std::vector<std::string> topic_list;
-    topic_list.reserve(topic_handles_map.size());
-    for (const auto& kv : topic_handles_map) {
+    topic_list.reserve(topic_handles_map_.size());
+    for (const auto& kv : topic_handles_map_) {
       topic_list.push_back(kv.first);
     }
-    rpc->cmd("update_topic_list")->msg(topic_list)->retry(-1)->call();
+    rpc_->cmd("update_topic_list")->msg(topic_list)->retry(-1)->call();
   }
 
  public:
@@ -153,14 +153,10 @@ class dds_client_t {
   bool is_open = false;
 
  private:
-  asio::io_context& io_context;
-  dds::rpc_s rpc = rpc_core::rpc::create();
-  detail::rpc_client_t<T> client;
-  std::unordered_map<std::string, std::vector<dds::handle_s>> topic_handles_map;
+  asio::io_context& io_context_;
+  dds::rpc_s rpc_ = rpc_core::rpc::create();
+  detail::rpc_client_t<T> client_;
+  std::unordered_map<std::string, std::vector<dds::handle_s>> topic_handles_map_;
 };
-
-using dds_client = dds_client_t<detail::socket_type::normal>;
-using dds_client_ssl = dds_client_t<detail::socket_type::ssl>;
-using domain_dds_client = dds_client_t<detail::socket_type::domain>;
 
 }  // namespace asio_net

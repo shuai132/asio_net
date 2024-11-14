@@ -15,24 +15,7 @@ class rpc_client_t : noncopyable {
  public:
   explicit rpc_client_t(asio::io_context& io_context, rpc_config rpc_config = {})
       : io_context_(io_context), rpc_config_(rpc_config), client_(std::make_shared<detail::tcp_client_t<T>>(io_context, rpc_config.to_tcp_config())) {
-    client_->on_open = [this]() {
-      auto session = std::make_shared<rpc_session_t<T>>(io_context_, rpc_config_);
-      rpc_session_ = session;
-      session->init(client_);
-
-      session->on_close = [this] {
-        client_->on_data = nullptr;
-        if (on_close) on_close();
-        client_->check_reconnect();
-      };
-
-      session->start_ping();
-      if (on_open) on_open(session->rpc);
-    };
-
-    client_->on_open_failed = [this](const std::error_code& ec) {
-      if (on_open_failed) on_open_failed(ec);
-    };
+    init();
   }
 
 #ifdef ASIO_NET_ENABLE_SSL
@@ -40,24 +23,7 @@ class rpc_client_t : noncopyable {
       : io_context_(io_context),
         rpc_config_(rpc_config),
         client_(std::make_shared<detail::tcp_client_t<T>>(io_context, ssl_context, rpc_config.to_tcp_config())) {
-    client_->on_open = [this]() {
-      auto session = std::make_shared<rpc_session_t<T>>(io_context_, rpc_config_);
-      rpc_session_ = session;
-      session->init(client_);
-
-      session->on_close = [this] {
-        client_->on_data = nullptr;
-        if (on_close) on_close();
-        client_->check_reconnect();
-      };
-
-      session->start_ping();
-      if (on_open) on_open(session->rpc);
-    };
-
-    client_->on_open_failed = [this](const std::error_code& ec) {
-      if (on_open_failed) on_open_failed(ec);
-    };
+    init();
   }
 #endif
 
@@ -93,6 +59,28 @@ class rpc_client_t : noncopyable {
 
   void stop() {
     client_->stop();
+  }
+
+ private:
+  void init() {
+    client_->on_open = [this]() {
+      auto session = std::make_shared<rpc_session_t<T>>(io_context_, rpc_config_);
+      rpc_session_ = session;
+      session->init(client_);
+
+      session->on_close = [this] {
+        client_->on_data = nullptr;
+        if (on_close) on_close();
+        client_->check_reconnect();
+      };
+
+      session->start_ping();
+      if (on_open) on_open(session->rpc);
+    };
+
+    client_->on_open_failed = [this](const std::error_code& ec) {
+      if (on_open_failed) on_open_failed(ec);
+    };
   }
 
  public:
