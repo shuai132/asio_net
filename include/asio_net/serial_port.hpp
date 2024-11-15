@@ -63,7 +63,7 @@ class serial_port : detail::noncopyable {
   }
 
   void run() {
-    asio::io_context::work work(io_context_);
+    auto work = asio::make_work_guard(io_context_);
     io_context_.run();
   }
 
@@ -113,7 +113,7 @@ class serial_port : detail::noncopyable {
       }
 
       if (!write_msg_queue_.empty()) {
-        io_context_.post([this, msg = std::move(write_msg_queue_.front())]() mutable {
+        asio::post(io_context_, [this, msg = std::move(write_msg_queue_.front())]() mutable {
           do_write(std::move(msg), true);
         });
         write_msg_queue_.pop_front();

@@ -78,7 +78,7 @@ class tcp_client_t : public tcp_channel_t<T> {
   }
 
   void run() {
-    asio::io_context::work work(io_context_);
+    auto work = asio::make_work_guard(io_context_);
     io_context_.run();
   }
 
@@ -92,7 +92,7 @@ class tcp_client_t : public tcp_channel_t<T> {
     static_assert(T == socket_type::normal || T == socket_type::ssl, "");
     auto resolver = std::make_unique<typename socket_impl<T>::resolver>(io_context_);
     auto rp = resolver.get();
-    rp->async_resolve(typename socket_impl<T>::resolver::query(host, std::to_string(port)),
+    rp->async_resolve(host, std::to_string(port),
                       [this, resolver = std::move(resolver), alive = std::weak_ptr<void>(this->is_alive_)](
                           const std::error_code& ec, const typename socket_impl<T>::resolver::results_type& endpoints) mutable {
                         if (alive.expired()) return;

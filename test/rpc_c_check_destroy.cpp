@@ -12,7 +12,7 @@ int main() {
   std::shared_ptr<rpc_client> client;
 
   std::thread([&] {
-    context.post([&] {
+    asio::post(context, [&] {
       client = std::make_shared<rpc_client>(context);
       client->on_open = [&](const std::shared_ptr<rpc_core::rpc>& rpc) {
         LOG("client on_open:");
@@ -33,7 +33,7 @@ int main() {
     });
 
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    context.post([&] {
+    asio::post(context, [&] {
       client = nullptr;
     });
 
@@ -41,7 +41,7 @@ int main() {
     context.stop();
   }).detach();
 
-  asio::io_context::work work(context);
+  auto work = asio::make_work_guard(context);
   context.run();
   return 0;
 }

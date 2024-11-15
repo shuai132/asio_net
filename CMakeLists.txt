@@ -43,6 +43,7 @@ endif ()
 
 if (ASIO_NET_BUILD_TEST)
     message(STATUS "ASIO_PATH: $ENV{ASIO_PATH}")
+    add_definitions(-DASIO_NO_DEPRECATED)
     include_directories($ENV{ASIO_PATH})
     link_libraries(${PROJECT_NAME})
     if (NOT MSVC)

@@ -38,8 +38,8 @@ int main(int argc, char** argv) {
   std::thread([&] {
     asio::io_context context;
     udp_client client(context);
-    context.post([&] {
-      udp_client::endpoint endpoint(asio::ip::address_v4::from_string("127.0.0.1"), PORT);
+    asio::post(context, [&] {
+      udp_client::endpoint endpoint(asio::ip::make_address_v4("127.0.0.1"), PORT);
       for (uint32_t i = 0; i < test_count_max; ++i) {
         auto data = std::to_string(i);
         client.send_to(data, endpoint, [&](const std::error_code& ec, std::size_t size) {

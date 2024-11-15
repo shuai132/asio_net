@@ -20,12 +20,9 @@ int main() {
     auto getFirstIp = [](asio::io_context& context) {
       using namespace asio::ip;
       tcp::resolver resolver(context);
-      tcp::resolver::query query(host_name(), "");
-      tcp::resolver::iterator iter = resolver.resolve(query);
-      tcp::resolver::iterator end;
-      if (iter != end) {
-        tcp::endpoint ep = *iter;
-        return ep.address().to_string();
+      auto res = resolver.resolve(host_name(), "");
+      if (!res.empty()) {
+        return res.begin()->endpoint().address().to_string();
       }
       return std::string();
     };

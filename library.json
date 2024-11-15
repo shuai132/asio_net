@@ -1,6 +1,6 @@
 {
   "name": "asio_net",
-  "description": "a tiny Async TCP/UDP/RPC library based on asio",
+  "description": "a tiny C++14 Async TCP/UDP/RPC/DDS library based on asio",
   "keywords": "tcp,udp,rpc,asio",
   "authors": {
     "name": "shuai132",

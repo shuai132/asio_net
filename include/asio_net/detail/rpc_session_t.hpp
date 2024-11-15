@@ -66,7 +66,7 @@ class rpc_session_t : noncopyable, public std::enable_shared_from_this<rpc_sessi
         rpc_session->on_close();
       }
       // post delay destroy rpc_session, ensure rpc.rsp() callback finish
-      io_context_.post([rpc_session = std::move(rpc_session)] {});
+      asio::post(io_context_, [rpc_session = std::move(rpc_session)] {});
       // clear tcp_session->on_close, avoid called more than once by close api
       tcp_session_.lock()->on_close = nullptr;
     };

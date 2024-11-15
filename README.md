@@ -4,7 +4,7 @@
 [![Release](https://img.shields.io/github/release/shuai132/asio_net.svg)](https://github.com/shuai132/asio_net/releases)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-a tiny Async TCP/UDP/RPC/DDS library based on [asio](http://think-async.com/Asio/)
+a tiny C++14 Async TCP/UDP/RPC/DDS library based on [asio](http://think-async.com/Asio/)
 and [rpc_core](https://github.com/shuai132/rpc_core)
 
 ## Features
@@ -140,6 +140,15 @@ please refer to the source code: [test](test)
   };
   client.open("localhost", PORT);
   client.run();
+```
+
+and you can use C++20 coroutine see: [rpc_c_coroutine.cpp](test/rpc_c_coroutine.cpp)
+
+```c++
+  asio::co_spawn(context, [rpc]() -> asio::awaitable<void> {
+    auto result = co_await rpc->cmd("cmd")->msg(std::string("hello"))->async_call<std::string>();
+    assert(result.data == "world");
+  }, asio::detached);
 ```
 
 * DDS

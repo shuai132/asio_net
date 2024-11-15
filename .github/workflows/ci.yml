@@ -60,7 +60,7 @@ jobs:
           submodules: true
 
       - name: Init ASIO
-        run: git clone https://github.com/chriskohlhoff/asio.git -b asio-1-30-2 --depth=1
+        run: git clone https://github.com/chriskohlhoff/asio.git -b asio-1-32-0 --depth=1
 
       - name: Configure (${{ matrix.configuration }})
         env:

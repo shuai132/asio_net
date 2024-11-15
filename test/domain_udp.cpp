@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
   std::thread([&] {
     asio::io_context context;
     domain_udp_client client(context);
-    context.post([&] {
+    asio::post(context, [&] {
       domain_udp_client::endpoint endpoint(ENDPOINT);
       for (uint32_t i = 0; i < test_count_max; ++i) {
         auto data = std::to_string(i);
