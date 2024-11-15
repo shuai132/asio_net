@@ -3,6 +3,7 @@
 #include <cstdio>
 
 #include "asio_net/rpc_client.hpp"
+#include "assert_def.h"
 #include "log.h"
 
 using namespace asio_net;
@@ -29,8 +30,11 @@ int main() {
           auto rsp3 = co_await rpc->cmd("cmd")->msg(std::string("hello"))->async_custom<std::string>();
           LOG("custom: string: type: %s: data: %s", rpc_core::request::finally_t_str(rsp3.type), rsp3.data.c_str());
           // void
-          auto rsp4 = co_await rpc->cmd("cmd")->msg(std::string("hello"))->async_call();
+          auto rsp4 = co_await rpc->cmd("cmd")->msg(std::string("hello"))->async_custom();
           LOG("custom: void: type: %s", rpc_core::request::finally_t_str(rsp4.type));
+          // cancel
+          auto rsp5 = co_await rpc->cmd("cmd")->msg(std::string("hello"))->cancel()->async_custom();
+          LOG("custom: cancel: type: %s", rpc_core::request::finally_t_str(rsp5.type));
         },
         asio::detached);
   };

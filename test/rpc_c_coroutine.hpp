@@ -1,56 +1,45 @@
 #pragma once
 
 #define RPC_CORE_FEATURE_ASYNC_CUSTOM async_custom
+#define RPC_CORE_FEATURE_ASYNC_CUSTOM_R asio::awaitable<request::result<R>>
 #include "asio.hpp"
 #include "rpc_core.hpp"
 
 namespace rpc_core {
 
 template <typename R, typename std::enable_if<!std::is_same<R, void>::value, int>::type>
-auto request::async_custom() {
-  asio::use_awaitable_t<> use_awaitable = {};
-  return asio::async_initiate<asio::use_awaitable_t<>, void(rpc_core::request::future_ret<R>)>(
-      [this]<typename Handler>(Handler&& h) mutable {
-        auto handler = std::make_shared<Handler>(std::forward<Handler>(h));
-        rsp([handler](R data) mutable {
-          rpc_core::request::future_ret<R> ret;
-          ret.type = finally_t::normal;
-          ret.data = std::move(data);
-          (*handler)(std::move(ret));
-        });
-        finally([handler = std::move(handler)](finally_t type) {
-          if (type != finally_t::normal) {
-            rpc_core::request::future_ret<R> ret;
-            ret.type = type;
-            (*handler)(std::move(ret));
-          }
+asio::awaitable<request::result<R>> request::async_custom() {
+  auto executor = co_await asio::this_coro::executor;
+  co_return co_await asio::async_compose<decltype(asio::use_awaitable), void(rpc_core::request::result<R>)>(
+      [this, &executor](auto& self) mutable {
+        using ST = std::remove_reference<decltype(self)>::type;
+        auto self_sp = std::make_shared<ST>(std::forward<ST>(self));
+        rsp([&executor, self = std::move(self_sp)](R data, finally_t type) mutable {
+          asio::dispatch(executor, [self = std::move(self), data = std::move(data), type]() {
+            self->complete({type, data});
+          });
         });
         call();
       },
-      use_awaitable);
+      asio::use_awaitable);
 }
 
 template <typename R, typename std::enable_if<std::is_same<R, void>::value, int>::type>
-auto request::async_custom() {
-  asio::use_awaitable_t<> use_awaitable = {};
-  return asio::async_initiate<asio::use_awaitable_t<>, void(rpc_core::request::future_ret<void>)>(
-      [this]<typename Handler>(Handler&& h) mutable {
-        auto handler = std::make_shared<Handler>(std::forward<Handler>(h));
-        rsp([handler]() mutable {
-          rpc_core::request::future_ret<R> ret;
-          ret.type = finally_t::normal;
-          (*handler)(std::move(ret));
-        });
-        finally([handler = std::move(handler)](finally_t type) {
-          if (type != finally_t::normal) {
-            rpc_core::request::future_ret<R> ret;
-            ret.type = type;
-            (*handler)(std::move(ret));
-          }
+asio::awaitable<request::result<R>> request::async_custom() {
+  auto executor = co_await asio::this_coro::executor;
+  co_return co_await asio::async_compose<decltype(asio::use_awaitable), void(rpc_core::request::result<R>)>(
+      [this, &executor](auto&& self) mutable {
+        using ST = std::remove_reference<decltype(self)>::type;
+        auto self_sp = std::make_shared<ST>(std::forward<ST>(self));
+        mark_need_rsp();
+        finally([&executor, self = std::move(self_sp)](finally_t type) mutable {
+          asio::dispatch(executor, [self = std::move(self), type] {
+            self->complete({type});
+          });
         });
         call();
       },
-      use_awaitable);
+      asio::use_awaitable);
 }
 
 }  // namespace rpc_core
