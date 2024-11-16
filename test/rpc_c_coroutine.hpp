@@ -28,7 +28,7 @@ template <typename R, typename std::enable_if<std::is_same<R, void>::value, int>
 asio::awaitable<request::result<R>> request::async_custom() {
   auto executor = co_await asio::this_coro::executor;
   co_return co_await asio::async_compose<decltype(asio::use_awaitable), void(rpc_core::request::result<R>)>(
-      [this, &executor](auto&& self) mutable {
+      [this, &executor](auto& self) mutable {
         using ST = std::remove_reference<decltype(self)>::type;
         auto self_sp = std::make_shared<ST>(std::forward<ST>(self));
         mark_need_rsp();

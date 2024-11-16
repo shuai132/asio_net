@@ -10,14 +10,13 @@ and [rpc_core](https://github.com/shuai132/rpc_core)
 ## Features
 
 * Header-Only
-* TCP/UDP support, depend: [asio](http://think-async.com/Asio/)
-* RPC support, depend: [rpc_core](https://github.com/shuai132/rpc_core)
-* DDS support, via socket/SSL, domain socket
-* Service discovery based on UDP multicast
-* Support both IPv4 and IPv6
-* Support SSL/TLS (with OpenSSL)
-* Support domain socket and rpc
-* Support serial port
+* TCP/UDP: depend: [asio](http://think-async.com/Asio/)
+* RPC: via socket/SSL, domain socket, depend: [rpc_core](https://github.com/shuai132/rpc_core)
+* DDS: via socket/SSL, domain socket, depend: [rpc_core](https://github.com/shuai132/rpc_core)
+* Service Discovery: based on UDP multicast
+* IPv4 and IPv6
+* SSL/TLS: depend OpenSSL
+* Serial Port
 * Automatic reconnection
 * Comprehensive unittests
 
@@ -32,6 +31,7 @@ Options:
 
 * C++14
 * [asio](http://think-async.com/Asio/)
+* Optional: C++20 (for rpc coroutine api, co_await async_call)
 
 ## Usage
 
