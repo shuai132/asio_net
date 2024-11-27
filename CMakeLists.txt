@@ -102,6 +102,10 @@ if (ASIO_NET_BUILD_TEST)
         add_executable(${PROJECT_NAME}_test_rpc_ssl test/rpc_ssl.cpp)
     endif ()
 
+    add_executable(${PROJECT_NAME}_test_rpc_s_coroutine test/rpc_s_coroutine.cpp)
+    target_compile_features(${PROJECT_NAME}_test_rpc_s_coroutine PRIVATE cxx_std_20)
+    target_compile_definitions(${PROJECT_NAME}_test_rpc_s_coroutine PRIVATE -DRPC_CORE_FEATURE_ASIO_COROUTINE)
+
     add_executable(${PROJECT_NAME}_test_rpc_c_coroutine test/rpc_c_coroutine.cpp)
     target_compile_features(${PROJECT_NAME}_test_rpc_c_coroutine PRIVATE cxx_std_20)
     target_compile_definitions(${PROJECT_NAME}_test_rpc_c_coroutine PRIVATE -DRPC_CORE_FEATURE_ASIO_COROUTINE)
