@@ -10,9 +10,9 @@ and [rpc_core](https://github.com/shuai132/rpc_core)
 ## Features
 
 * Header-Only
-* TCP/UDP: depend: [asio](http://think-async.com/Asio/)
-* RPC: via socket/SSL, domain socket, depend: [rpc_core](https://github.com/shuai132/rpc_core)
-* DDS: via socket/SSL, domain socket, depend: [rpc_core](https://github.com/shuai132/rpc_core)
+* TCP/UDP: support auto_pack option for tcp
+* RPC: via socket/SSL, domain socket, support c++20 coroutine for asynchronous operations
+* DDS: via socket/SSL, domain socket
 * Service Discovery: based on UDP multicast
 * IPv4 and IPv6
 * SSL/TLS: depend OpenSSL
@@ -142,14 +142,27 @@ please refer to the source code: [test](test)
   client.run();
 ```
 
-and you can use C++20 coroutine see: [rpc_c_coroutine.cpp](test/rpc_c_coroutine.cpp)
+and you can use C++20 coroutine:
 
 ```c++
-  asio::co_spawn(context, [rpc]() -> asio::awaitable<void> {
-    auto result = co_await rpc->cmd("cmd")->msg(std::string("hello"))->async_call<std::string>();
-    assert(result.data == "world");
-  }, asio::detached);
+  // server
+  rpc->subscribe("cmd", [&](request_response<std::string, std::string> rr) -> asio::awaitable<void> {
+    assert(rr->req == "hello");
+    asio::steady_timer timer(context);
+    timer.expires_after(std::chrono::seconds(1));
+    co_await timer.async_wait();
+    rr->rsp("world");
+  }, scheduler_asio_coroutine);
+
+  // client
+  // use C++20 co_await with asio, or you can use custom async implementation, and co_await it!
+  auto rsp = co_await rpc->cmd("cmd")->msg(std::string("hello"))->async_call<std::string>();
+  assert(rsp.data == "world");
 ```
+
+Inspect the code for more
+details: [rpc_s_coroutine.cpp](test/rpc_s_coroutine.cpp)
+and [rpc_c_coroutine.cpp](test/rpc_c_coroutine.cpp)
 
 * DDS
 
