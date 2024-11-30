@@ -11,8 +11,8 @@ and [rpc_core](https://github.com/shuai132/rpc_core)
 
 * Header-Only
 * TCP/UDP: support auto_pack option for tcp
-* RPC: via socket/SSL, domain socket, support c++20 coroutine for asynchronous operations
-* DDS: via socket/SSL, domain socket
+* RPC: via socket(with SSL/TLS), domain socket, support c++20 coroutine for asynchronous operations
+* DDS: via socket(with SSL/TLS), domain socket
 * Service Discovery: based on UDP multicast
 * IPv4 and IPv6
 * SSL/TLS: depend OpenSSL
@@ -29,8 +29,8 @@ Options:
 
 ## Requirements
 
-* C++14
 * [asio](http://think-async.com/Asio/)
+* C++14
 * Optional: C++20 (for rpc coroutine api, co_await async_call)
 
 ## Usage

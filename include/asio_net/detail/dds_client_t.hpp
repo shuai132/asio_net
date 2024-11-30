@@ -22,16 +22,35 @@ class dds_client_t {
   }
 #endif
 
-  void publish(std::string topic, std::string data = "") {
-    auto msg = dds::Msg{.topic = std::move(topic), .data = std::move(data)};
+  template <typename D = std::string>
+  void publish(std::string topic, D data = {}) {
+    auto msg = dds::Msg{.topic = std::move(topic), .data = rpc_core::serialize(std::move(data))};
     dispatch_publish(msg);
     rpc_->cmd("publish")->msg(std::move(msg))->call();
   }
 
-  uintptr_t subscribe(const std::string& topic, dds::handle_t handle) {
-    auto it = topic_handles_map_.find(topic);
-    auto handle_sp = std::make_shared<dds::handle_t>(std::move(handle));
+  template <typename F, typename std::enable_if<rpc_core::detail::callable_traits<F>::argc == 0, int>::type = 0>
+  uintptr_t subscribe(const std::string& topic, F handle) {
+    auto handle_sp = std::make_shared<dds::handle_t>([handle = std::move(handle)](const std::string&) mutable {
+      handle();
+    });
+    return subscribe_raw(topic, std::move(handle_sp));
+  }
+
+  template <typename F, typename std::enable_if<rpc_core::detail::callable_traits<F>::argc == 1, int>::type = 0>
+  uintptr_t subscribe(const std::string& topic, F handle) {
+    auto handle_sp = std::make_shared<dds::handle_t>([handle = std::move(handle)](std::string msg) mutable {
+      using F_Param = rpc_core::detail::remove_cvref_t<typename rpc_core::detail::callable_traits<F>::template argument_type<0>>;
+      F_Param p;
+      rpc_core::deserialize(std::move(msg), p);
+      handle(std::move(p));
+    });
+    return subscribe_raw(topic, std::move(handle_sp));
+  }
+
+  uintptr_t subscribe_raw(const std::string& topic, dds::handle_s handle_sp) {
     auto handle_id = (uintptr_t)handle_sp.get();
+    auto it = topic_handles_map_.find(topic);
     if (it == topic_handles_map_.cend()) {
       topic_handles_map_[topic].push_back(std::move(handle_sp));
       update_topic_list();

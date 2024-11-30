@@ -98,6 +98,8 @@ static auto interval_check = [](auto& client) {
   /// 1. test basic
   static bool first_run = true;
   static std::atomic_bool received_flag_self{false};
+  static std::atomic_bool received_flag_vector{false};
+  static std::atomic_bool received_flag_void{false};
   LOG("test... %d", first_run);
   if (first_run) {
     first_run = false;
@@ -105,6 +107,18 @@ static auto interval_check = [](auto& client) {
       LOG("received: topic_self: %s", msg.c_str());
       ASSERT(!received_flag_self);
       received_flag_self = true;
+    });
+    client.subscribe("topic_vector", [](const std::vector<uint32_t>& msg) {
+      LOG("received: topic_vector: %zu", msg.size());
+      ASSERT(!received_flag_vector);
+      std::vector<uint32_t> data{1, 2, 3};
+      ASSERT(msg == data);
+      received_flag_vector = true;
+    });
+    client.subscribe("topic_void", [] {
+      LOG("received: topic_void");
+      ASSERT(!received_flag_void);
+      received_flag_void = true;
     });
   } else {
     // check and reset flag
@@ -119,28 +133,42 @@ static auto interval_check = [](auto& client) {
     ASSERT(received_flag_self);
     received_flag_self = false;
 
+    ASSERT(received_flag_vector);
+    received_flag_vector = false;
+
+    ASSERT(received_flag_void);
+    received_flag_void = false;
+
     if (run_once) {
       client.stop();
     }
   }
 
-  client.publish("topic_self", "to client_self");
-  client.publish("topic_0", "to client_0");
-  client.publish("topic_1", "to client_1");
-  client.publish("topic_2", "to client_2");
-  client.publish("topic_all", "hello");
+  /// 2 common usage
+  // 2.1 msg type: std::string
+  client.publish<std::string>("topic_self", "to client_self");
+  client.publish<std::string>("topic_0", "to client_0");
+  client.publish<std::string>("topic_1", "to client_1");
+  client.publish<std::string>("topic_2", "to client_2");
+  client.publish<std::string>("topic_all", "hello");
 
-  /// 2.1 test unsubscribe
-  client.subscribe("topic_test_0", [](const std::string& msg) {
-    (void)(msg);
+  // 2.2 msg type: std::vector or any serializable type
+  std::vector<uint32_t> data{1, 2, 3};
+  client.publish("topic_vector", data);
+
+  // 2.3 msg type: void
+  client.publish("topic_void");
+
+  /// 3 test unsubscribe
+  // 3.1  use topic
+  client.subscribe("topic_test_0", [] {
     ASSERT(false);
   });
   client.unsubscribe("topic_test_0");
   client.publish("topic_test_0");
 
-  /// 2.2
-  auto id = client.subscribe("topic_test_1", [](const std::string& msg) {
-    (void)(msg);
+  // 3.2  use id
+  auto id = client.subscribe("topic_test_1", [] {
     ASSERT(false);
   });
   client.unsubscribe(id);
