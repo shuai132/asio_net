@@ -10,7 +10,7 @@ and [rpc_core](https://github.com/shuai132/rpc_core)
 ## Features
 
 * Header-Only
-* TCP/UDP: support auto_pack option for tcp
+* TCP/UDP: support auto_pack option for tcp, will ensure packets are complete, just like websocket
 * RPC: via socket(with SSL/TLS), domain socket, support c++20 coroutine for asynchronous operations
 * DDS: via socket(with SSL/TLS), domain socket
 * Service Discovery: based on UDP multicast
@@ -19,13 +19,6 @@ and [rpc_core](https://github.com/shuai132/rpc_core)
 * Serial Port
 * Automatic reconnection
 * Comprehensive unittests
-
-Options:
-
-* TCP can be configured to automatically handle the problem of packet fragmentation to support the transmission of
-  complete data packets.
-
-* Supports setting the maximum packet length, and will automatically disconnect if exceeded.
 
 ## Requirements
 
@@ -50,6 +43,128 @@ git submodule update --init --recursive
 
 The following are examples of using each module. For complete unit tests,
 please refer to the source code: [test](test)
+
+* RPC
+
+  rpc based on tcp and [rpc_core](https://github.com/shuai132/rpc_core), and also support ipv6 and ssl.
+  inspect the code for more details [rpc.cpp](test/rpc.cpp)
+
+```c++
+  // server
+  asio::io_context context;
+  rpc_server server(context, PORT/*, rpc_config*/);
+  server.on_session = [](const std::weak_ptr<rpc_session>& rs) {
+    auto session = rs.lock();
+    session->on_close = [] {};
+    session->rpc->subscribe("cmd", [](const std::string& data) -> std::string {
+      return "world";
+    });
+  };
+  server.start(true);
+```
+
+```c++
+  // client
+  asio::io_context context;
+  rpc_client client(context/*, rpc_config*/);
+  client.on_open = [](const std::shared_ptr<rpc_core::rpc>& rpc) {
+    rpc->cmd("cmd")
+       ->msg(std::string("hello"))
+       ->rsp([](const std::string& data) {
+         assert(data == "world");
+       })
+       ->call();
+  };
+  client.on_close = [] {};
+  client.open("localhost", PORT);
+  client.run();
+```
+
+and, you can create rpc first, for more details: [rpc_config.cpp](test/rpc_config.cpp)
+
+```c++
+  // server
+  auto rpc = rpc_core::rpc::create();
+  rpc->subscribe("cmd", [](const std::string& data) -> std::string {
+    assert(data == "hello");
+    return "world";
+  });
+  
+  asio::io_context context;
+  rpc_server server(context, PORT, rpc_config{.rpc = rpc});
+  server.start(true);
+```
+
+```c++
+  // client
+  auto rpc = rpc_core::rpc::create();
+  asio::io_context context;
+  rpc_client client(context, rpc_config{.rpc = rpc});
+  client.open("localhost", PORT);
+  client.run();
+
+  rpc->cmd("cmd")->msg(std::string("hello"))->call();
+```
+
+and you can use C++20 coroutine:
+
+```c++
+  // server
+  rpc->subscribe("cmd", [&](request_response<std::string, std::string> rr) -> asio::awaitable<void> {
+    assert(rr->req == "hello");
+    asio::steady_timer timer(context);
+    timer.expires_after(std::chrono::seconds(1));
+    co_await timer.async_wait();
+    rr->rsp("world");
+  }, scheduler_asio_coroutine);
+
+  // client
+  // use C++20 co_await with asio, or you can use custom async implementation, and co_await it!
+  auto rsp = co_await rpc->cmd("cmd")->msg(std::string("hello"))->async_call<std::string>();
+  assert(rsp.data == "world");
+```
+
+inspect the code for more
+details: [rpc_s_coroutine.cpp](test/rpc_s_coroutine.cpp)
+and [rpc_c_coroutine.cpp](test/rpc_c_coroutine.cpp)
+
+* DDS
+
+```c++
+  // run a server as daemon
+  asio::io_context context;
+  dds_server server(context, PORT);
+  server.start(true);
+```
+
+```c++
+  // client
+  asio::io_context context;
+  dds_client client(context);
+  client.open("localhost", PORT);
+  client.subscribe("topic", [](const std::string& data) {
+  });
+  client.publish<std::string>("topic", "string/binary");
+  client.run();
+```
+
+* Server Discovery
+
+```c++
+  // receiver
+  asio::io_context context;
+  server_discovery::receiver receiver(context, [](const std::string& name, const std::string& message) {
+    printf("receive: name: %s, message: %s\n", name.c_str(), message.c_str());
+  });
+  context.run();
+```
+
+```c++
+  // sender
+  asio::io_context context;
+  server_discovery::sender sender_ip(context, "ip", "message");
+  context.run();
+```
 
 * TCP
 
@@ -102,103 +217,6 @@ please refer to the source code: [test](test)
   udp_client client(context);
   auto endpoint = udp::endpoint(asio::ip::address_v4::from_string("127.0.0.1"), PORT);
   client.send_to("hello", endpoint);
-  context.run();
-```
-
-* RPC
-
-  rpc based on tcp and [rpc_core](https://github.com/shuai132/rpc_core), and also support ipv6 and ssl.
-  more usages, see [rpc.cpp](test/rpc.cpp) and [rpc_config.cpp](test/rpc_config.cpp)
-
-```c++
-  // server
-  asio::io_context context;
-  rpc_server server(context, PORT/*, rpc_config*/);
-  server.on_session = [](const std::weak_ptr<rpc_session>& rs) {
-    auto session = rs.lock();
-    session->on_close = [] {
-    };
-    session->rpc->subscribe("cmd", [](const std::string& data) -> std::string {
-      return "world";
-    });
-  };
-  server.start(true);
-```
-
-```c++
-  // client
-  asio::io_context context;
-  rpc_client client(context/*, rpc_config*/);
-  client.on_open = [](const std::shared_ptr<rpc_core::rpc>& rpc) {
-    rpc->cmd("cmd")
-        ->msg(std::string("hello"))
-        ->rsp([](const std::string& data) {
-        })
-        ->call();
-  };
-  client.on_close = [] {
-  };
-  client.open("localhost", PORT);
-  client.run();
-```
-
-and you can use C++20 coroutine:
-
-```c++
-  // server
-  rpc->subscribe("cmd", [&](request_response<std::string, std::string> rr) -> asio::awaitable<void> {
-    assert(rr->req == "hello");
-    asio::steady_timer timer(context);
-    timer.expires_after(std::chrono::seconds(1));
-    co_await timer.async_wait();
-    rr->rsp("world");
-  }, scheduler_asio_coroutine);
-
-  // client
-  // use C++20 co_await with asio, or you can use custom async implementation, and co_await it!
-  auto rsp = co_await rpc->cmd("cmd")->msg(std::string("hello"))->async_call<std::string>();
-  assert(rsp.data == "world");
-```
-
-Inspect the code for more
-details: [rpc_s_coroutine.cpp](test/rpc_s_coroutine.cpp)
-and [rpc_c_coroutine.cpp](test/rpc_c_coroutine.cpp)
-
-* DDS
-
-```c++
-  // run a server as daemon
-  asio::io_context context;
-  dds_server server(context, PORT);
-  server.start(true);
-```
-
-```c++
-  // client
-  asio::io_context context;
-  dds_client client(context);
-  client.open("localhost", PORT);
-  client.subscribe("topic", [](const std::string& data) {
-  });
-  client.publish("topic", "string/binary");
-  client.run();
-```
-
-* Server Discovery
-
-```c++
-  // receiver
-  asio::io_context context;
-  server_discovery::receiver receiver(context, [](const std::string& name, const std::string& message) {
-    printf("receive: name: %s, message: %s\n", name.c_str(), message.c_str());
-  });
-  context.run();
-```
-
-```c++
-  // sender
-  asio::io_context context;
-  server_discovery::sender sender_ip(context, "ip", "message");
   context.run();
 ```
 
