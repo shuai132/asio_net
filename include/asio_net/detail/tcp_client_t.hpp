@@ -142,9 +142,11 @@ inline void tcp_client_t<socket_type::normal>::async_connect_handler<socket_type
   if (!ec) {
     this->init_socket();
     tcp_channel_t<socket_type::normal>::on_close = [this] {
+      is_open = false;
       if (tcp_client_t::on_close) tcp_client_t::on_close();
       check_reconnect();
     };
+    is_open = true;
     if (on_open) on_open();
     if (reconnect_timer_) {
       reconnect_timer_->cancel();
@@ -162,9 +164,11 @@ inline void tcp_client_t<socket_type::domain>::async_connect_handler<socket_type
   if (!ec) {
     this->init_socket();
     tcp_channel_t<socket_type::domain>::on_close = [this] {
+      is_open = false;
       if (tcp_client_t::on_close) tcp_client_t::on_close();
       check_reconnect();
     };
+    is_open = true;
     if (on_open) on_open();
     if (reconnect_timer_) {
       reconnect_timer_->cancel();
@@ -185,9 +189,11 @@ inline void tcp_client_t<socket_type::ssl>::async_connect_handler<socket_type::s
     socket_.async_handshake(asio::ssl::stream_base::client, [this](const std::error_code& error) {
       if (!error) {
         tcp_channel_t<socket_type::ssl>::on_close = [this] {
+          is_open = false;
           if (tcp_client_t::on_close) tcp_client_t::on_close();
           check_reconnect();
         };
+        is_open = true;
         if (on_open) on_open();
         if (reconnect_timer_) {
           reconnect_timer_->cancel();

@@ -49,11 +49,13 @@ int main(int argc, char** argv) {
     tcp_client client(context, tcp_config{.auto_pack = true});
     client.on_open = [&] {
       LOG("client on_open:");
+      ASSERT(client.is_open);
       for (uint32_t i = 0; i < test_count_max; ++i) {
         client.send(std::to_string(i));
       }
     };
     client.on_data = [&](const std::string& data) {
+      ASSERT(client.is_open);
 #ifndef ASIO_NET_DISABLE_ON_DATA_PRINT
       LOG("client on_data: %s", data.c_str());
 #endif
@@ -63,6 +65,7 @@ int main(int argc, char** argv) {
       }
     };
     client.on_close = [&] {
+      ASSERT(!client.is_open);
       pass_flag_client_close = true;
       ASSERT(test_count_expect == test_count_max - 1);
       LOG("client on_close:");
