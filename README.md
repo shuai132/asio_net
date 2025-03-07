@@ -1,6 +1,6 @@
 # asio_net
 
-[![Build Status](https://github.com/shuai132/asio_net/workflows/build/badge.svg)](https://github.com/shuai132/asio_net/actions?workflow=build)
+[![Build Status](https://github.com/shuai132/asio_net/workflows/CI/badge.svg)](https://github.com/shuai132/asio_net/actions?workflow=CI)
 [![Release](https://img.shields.io/github/release/shuai132/asio_net.svg)](https://github.com/shuai132/asio_net/releases)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 

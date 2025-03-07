@@ -71,7 +71,6 @@ class rpc_client_t : noncopyable {
       session->on_close = [this] {
         client_->on_data = nullptr;
         if (on_close) on_close();
-        client_->check_reconnect();
       };
 
       session->start_ping();

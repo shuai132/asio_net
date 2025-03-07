@@ -103,6 +103,7 @@ class tcp_client_t : public tcp_channel_t<T> {
                                                 async_connect_handler<T>(ec);
                                               });
                         } else {
+                          tcp_channel_t<T>::close_socket();  // release resource
                           if (on_open_failed) on_open_failed(ec);
                           check_reconnect();
                         }

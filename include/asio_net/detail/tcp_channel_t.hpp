@@ -40,6 +40,11 @@ class tcp_channel_t : private noncopyable {
     return socket_.lowest_layer();
   }
 
+  inline void close_socket() const {
+    asio::error_code ec;
+    get_socket().close(ec);
+  }
+
  public:
   /**
    * async send message

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <utility>
 
 #include "noncopyable.hpp"
@@ -56,8 +57,12 @@ class rpc_session_t : noncopyable, public std::enable_shared_from_this<rpc_sessi
 
     rpc->set_ready(true);
 
+    // save origin on_close(may from tcp_client)
+    auto oc = tcp_session->on_close;
     // bind rpc_session lifecycle to tcp_session and end with on_close
-    tcp_session->on_close = [this, rpc_session = this->shared_from_this()]() mutable {
+    tcp_session->on_close = [this, rpc_session = this->shared_from_this(), oc = std::move(oc)]() mutable {
+      if (oc) oc();
+
       rpc->set_ready(false);
 
       stop_ping();
@@ -71,6 +76,7 @@ class rpc_session_t : noncopyable, public std::enable_shared_from_this<rpc_sessi
       tcp_session_.lock()->on_close = nullptr;
     };
 
+    assert(tcp_session->on_data == nullptr);  // ensure it's empty
     tcp_session->on_data = [this](std::string data) {
       rpc->get_connection()->on_recv_package(std::move(data));
     };
