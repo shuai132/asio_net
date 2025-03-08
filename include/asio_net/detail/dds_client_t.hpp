@@ -98,13 +98,11 @@ class dds_client_t {
 
   void open(std::string ip, uint16_t port) {
     static_assert(T == detail::socket_type::normal || T == detail::socket_type::ssl, "");
-    client_.set_reconnect(1000);
     client_.open(std::move(ip), port);
   }
 
   void open(std::string endpoint) {
     static_assert(T == detail::socket_type::domain, "");
-    client_.set_reconnect(1000);
     client_.open(std::move(endpoint));
   }
 
@@ -120,8 +118,12 @@ class dds_client_t {
     client_.stop();
   }
 
-  void reset_reconnect(uint32_t ms) {
+  void set_reconnect(uint32_t ms) {
     client_.set_reconnect(ms);
+  }
+
+  void cancel_reconnect() {
+    client_.cancel_reconnect();
   }
 
   void wait_open() {
@@ -132,6 +134,7 @@ class dds_client_t {
 
  private:
   void init() {
+    client_.set_reconnect(1000);
     client_.on_open = [this](const dds::rpc_s&) {
       ASIO_NET_LOGD("dds_client_t<%d>: on_open", (int)T);
       rpc_->subscribe("publish", [this](const dds::Msg& msg) {

@@ -65,7 +65,7 @@ static void init_client() {
       client.open("localhost", PORT);
 #endif
       // ensure open for unittest
-      client.reset_reconnect(0);
+      client.set_reconnect(0);
       client.wait_open();
 
       client.subscribe("topic_all", [i](const std::string& data) {
@@ -204,7 +204,7 @@ int main(int argc, char* argv[]) {
   client.open("localhost", PORT);
 #endif
   // ensure open for unittest
-  client.reset_reconnect(0);
+  client.set_reconnect(0);
   client.wait_open();
 
   std::function<void()> time_task;

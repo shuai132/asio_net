@@ -71,6 +71,7 @@ class tcp_client_t : public tcp_channel_t<T> {
       reconnect_timer_->async_wait([this](const asio::error_code& ec) {
         if (is_open) return;
         if (!ec) {
+          ASIO_NET_LOGD("reconnect...");
           open_();
         }
       });
