@@ -24,7 +24,7 @@ and [rpc_core](https://github.com/shuai132/rpc_core)
 
 * [asio](http://think-async.com/Asio/)
 * C++14
-* Optional: C++20 (for rpc coroutine api, co_await async_call)
+* Optional: C++20 (for rpc coroutine api, co_await co_call)
 
 ## Usage
 
@@ -120,7 +120,7 @@ rpc->subscribe("cmd", [&](request_response<std::string, std::string> rr) -> asio
 
 // client
 // use C++20 co_await with asio, or you can use custom async implementation, and co_await it!
-auto rsp = co_await rpc->cmd("cmd")->msg(std::string("hello"))->async_call<std::string>();
+auto rsp = co_await rpc->cmd("cmd")->msg(std::string("hello"))->co_call<std::string>();
 assert(rsp.data == "world");
 ```
 

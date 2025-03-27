@@ -1,14 +1,14 @@
 #pragma once
 
-#define RPC_CORE_FEATURE_ASYNC_CUSTOM async_custom
-#define RPC_CORE_FEATURE_ASYNC_CUSTOM_R asio::awaitable<result<R>>
+#define RPC_CORE_FEATURE_CO_CUSTOM co_custom
+#define RPC_CORE_FEATURE_CO_CUSTOM_R asio::awaitable<result<R>>
 #include "asio.hpp"
 #include "rpc_core.hpp"
 
 namespace rpc_core {
 
 template <typename R, typename std::enable_if<!std::is_same<R, void>::value, int>::type>
-asio::awaitable<result<R>> request::async_custom() {
+asio::awaitable<result<R>> request::co_custom() {
   auto executor = co_await asio::this_coro::executor;
   co_return co_await asio::async_compose<decltype(asio::use_awaitable), void(result<R>)>(
       [this, &executor](auto& self) mutable {
@@ -25,7 +25,7 @@ asio::awaitable<result<R>> request::async_custom() {
 }
 
 template <typename R, typename std::enable_if<std::is_same<R, void>::value, int>::type>
-asio::awaitable<result<R>> request::async_custom() {
+asio::awaitable<result<R>> request::co_custom() {
   auto executor = co_await asio::this_coro::executor;
   co_return co_await asio::async_compose<decltype(asio::use_awaitable), void(result<R>)>(
       [this, &executor](auto& self) mutable {
