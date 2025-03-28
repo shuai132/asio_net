@@ -3,6 +3,7 @@
 #include <utility>
 #include <vector>
 
+#include "dds_inner_cmd.hpp"
 #include "dds_type.hpp"
 #include "rpc_client_t.hpp"
 
@@ -26,7 +27,7 @@ class dds_client_t {
   void publish(std::string topic, D data = {}) {
     auto msg = dds::Msg{.topic = std::move(topic), .data = rpc_core::serialize(std::move(data))};
     dispatch_publish(msg);
-    rpc_->cmd("publish")->msg(std::move(msg))->call();
+    rpc_->cmd(cmd_publish)->msg(std::move(msg))->retry(-1)->call();
   }
 
   template <typename F, typename std::enable_if<rpc_core::detail::callable_traits<F>::argc == 0, int>::type = 0>
@@ -137,7 +138,7 @@ class dds_client_t {
     client_.set_reconnect(1000);
     client_.on_open = [this](const dds::rpc_s&) {
       ASIO_NET_LOGD("dds_client_t<%d>: on_open", (int)T);
-      rpc_->subscribe("publish", [this](const dds::Msg& msg) {
+      rpc_->subscribe(cmd_publish, [this](const dds::Msg& msg) {
         dispatch_publish(msg);
       });
       update_topic_list();
@@ -166,7 +167,7 @@ class dds_client_t {
     for (const auto& kv : topic_handles_map_) {
       topic_list.push_back(kv.first);
     }
-    rpc_->cmd("update_topic_list")->msg(topic_list)->retry(-1)->call();
+    rpc_->cmd(cmd_update_topic_list)->msg(topic_list)->retry(-1)->call();
   }
 
  public:

@@ -3,6 +3,7 @@
 #include <utility>
 #include <vector>
 
+#include "dds_inner_cmd.hpp"
 #include "dds_type.hpp"
 #include "rpc_server_t.hpp"
 
@@ -42,10 +43,10 @@ class dds_server_t {
       };
 
       auto rpc = session->rpc;
-      rpc->subscribe("update_topic_list", [this, rpc_wp = dds::rpc_w(rpc)](const std::vector<std::string>& topic_list) {
+      rpc->subscribe(cmd_update_topic_list, [this, rpc_wp = dds::rpc_w(rpc)](const std::vector<std::string>& topic_list) {
         update_topic_list(rpc_wp.lock(), topic_list);
       });
-      rpc->subscribe("publish", [this, rpc_wp = dds::rpc_w(rpc)](const dds::Msg& msg) {
+      rpc->subscribe(cmd_publish, [this, rpc_wp = dds::rpc_w(rpc)](const dds::Msg& msg) {
         publish(msg, rpc_wp);
       });
     };
@@ -57,7 +58,7 @@ class dds_server_t {
       auto from_rpc_sp = from_rpc.lock();
       for (const auto& rpc : it->second) {
         if (rpc == from_rpc_sp) continue;
-        rpc->cmd("publish")->msg(msg)->retry(-1)->call();
+        rpc->cmd(cmd_publish)->msg(msg)->retry(-1)->call();
       }
     }
   }
