@@ -36,9 +36,17 @@ int main() {
           // string
           auto rsp3 = co_await rpc->cmd("cmd")->msg(std::string("hello"))->co_custom<std::string>();
           LOG("custom: string: type: %s: data: %s", rpc_core::finally_t_str(rsp3.type), rsp3.data.c_str());
+          // or
+          auto rsp33 = co_await rpc->co_custom<std::string>("cmd", std::string("hello"));
+          LOG("custom: string: type: %s: data: %s", rpc_core::finally_t_str(rsp33.type), rsp33.data.c_str());
+
           // void
           auto rsp4 = co_await rpc->cmd("cmd")->msg(std::string("hello"))->co_custom();
           LOG("custom: void: type: %s", rpc_core::finally_t_str(rsp4.type));
+          // or
+          auto rsp44 = co_await rpc->co_custom("cmd", std::string("hello"));
+          LOG("custom: void: type: %s", rpc_core::finally_t_str(rsp44.type));
+
           // cancel
           auto rsp5 = co_await rpc->cmd("cmd")->msg(std::string("hello"))->cancel()->co_custom();
           LOG("custom: cancel: type: %s", rpc_core::finally_t_str(rsp5.type));

@@ -42,4 +42,14 @@ asio::awaitable<result<R>> request::co_custom() {
       asio::use_awaitable);
 }
 
+template <typename R>
+inline asio::awaitable<result<R>> rpc::co_custom(cmd_type cmd) {
+  co_return co_await this->cmd(std::move(cmd))->co_call<R>();
+}
+
+template <typename R, typename Msg>
+inline asio::awaitable<result<R>> rpc::co_custom(cmd_type cmd, Msg&& message) {
+  co_return co_await this->cmd(std::move(cmd))->msg(std::forward<Msg>(message))->template co_call<R>();
+}
+
 }  // namespace rpc_core

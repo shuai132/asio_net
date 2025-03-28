@@ -104,6 +104,7 @@ client.open("localhost", PORT);
 client.run();
 
 rpc->cmd("cmd")->msg(std::string("hello"))->call();
+// or: rpc->call("cmd", std::string("hello"));
 ```
 
 and you can use C++20 coroutine:
@@ -121,6 +122,7 @@ rpc->subscribe("cmd", [&](request_response<std::string, std::string> rr) -> asio
 // client
 // use C++20 co_await with asio, or you can use custom async implementation, and co_await it!
 auto rsp = co_await rpc->cmd("cmd")->msg(std::string("hello"))->co_call<std::string>();
+// or: auto rsp = co_await rpc->co_call<std::string>("cmd", std::string("hello"));
 assert(rsp.data == "world");
 ```
 
