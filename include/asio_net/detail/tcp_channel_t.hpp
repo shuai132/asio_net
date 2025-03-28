@@ -53,9 +53,10 @@ class tcp_channel_t : private noncopyable {
    * 3. not threadsafe, only can be used on io_context thread
    *
    * @param msg can be string or binary
+   * @return true when accepted for sending; delivery is asynchronous
    */
-  void send(std::string msg) {
-    do_write(std::move(msg), false);
+  bool send(std::string msg) {
+    return do_write(std::move(msg), false);
   }
 
   /**
@@ -151,29 +152,36 @@ class tcp_channel_t : private noncopyable {
     });
   }
 
-  void do_write(std::string msg, bool from_queue) {
+  bool do_write(std::string msg, bool from_queue) {
+    if (!is_open()) return false;
+
     if (config_.auto_pack && msg.size() > config_.max_body_size) {
       ASIO_NET_LOGE("write: body size=%zu > max_body_size=%u", msg.size(), config_.max_body_size);
       do_close();
+      return false;
     }
 
     if (msg.size() > config_.max_send_buffer_size) {
       ASIO_NET_LOGE("write: body size=%zu > max_send_buffer_size=%u", msg.size(), config_.max_send_buffer_size);
       do_close();
+      return false;
     }
 
     // block wait send_buffer idle
     while (msg.size() + send_buffer_now_ > config_.max_send_buffer_size) {
+      if (!is_open()) return false;
       ASIO_NET_LOGV("block wait send_buffer idle");
       static_cast<asio::io_context*>(&socket_.get_executor().context())->run_one();
     }
+
+    if (!is_open()) return false;
 
     // queue for asio::async_write
     if (!from_queue && send_buffer_now_ != 0) {
       ASIO_NET_LOGV("queue for asio::async_write");
       send_buffer_now_ += msg.size();
       write_msg_queue_.emplace_back(std::move(msg));
-      return;
+      return true;
     }
     if (!from_queue) {
       send_buffer_now_ += msg.size();
@@ -203,6 +211,7 @@ class tcp_channel_t : private noncopyable {
             write_msg_queue_.shrink_to_fit();
           }
         });
+    return true;
   }
 
   void do_close() {

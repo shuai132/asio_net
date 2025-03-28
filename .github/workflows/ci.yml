@@ -95,6 +95,10 @@ jobs:
         working-directory: build
         run: ./asio_net_test_rpc${{ matrix.env.BIN_SUFFIX }}
 
+      - name: Test RPC (send acceptance)
+        working-directory: build
+        run: ./asio_net_test_rpc_send_acceptance${{ matrix.env.BIN_SUFFIX }}
+
       - name: Test RPC (rpc_config)
         working-directory: build
         run: ./asio_net_test_rpc_config${{ matrix.env.BIN_SUFFIX }}
