@@ -3,6 +3,7 @@
 #include "rpc_core.hpp"
 
 namespace asio_net {
+namespace detail {
 namespace dds {
 
 using rpc_s = std::shared_ptr<rpc_core::rpc>;
@@ -17,4 +18,5 @@ struct Msg {
 };
 
 }  // namespace dds
+}  // namespace detail
 }  // namespace asio_net

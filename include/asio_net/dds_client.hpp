@@ -4,8 +4,8 @@
 
 namespace asio_net {
 
-using dds_client = dds_client_t<detail::socket_type::normal>;
-using dds_client_ssl = dds_client_t<detail::socket_type::ssl>;
-using domain_dds_client = dds_client_t<detail::socket_type::domain>;
+using dds_client = detail::dds_client_t<detail::socket_type::normal>;
+using dds_client_ssl = detail::dds_client_t<detail::socket_type::ssl>;
+using domain_dds_client = detail::dds_client_t<detail::socket_type::domain>;
 
 }  // namespace asio_net
