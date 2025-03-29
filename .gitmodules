@@ -1,3 +1,3 @@
 [submodule "include/asio_net/rpc_core"]
 	path = include/asio_net/rpc_core
-	url = git@github.com:shuai132/rpc_core.git
+	url = ../rpc_core.git

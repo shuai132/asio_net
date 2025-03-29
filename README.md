@@ -31,13 +31,13 @@ and [rpc_core](https://github.com/shuai132/rpc_core)
 * clone
 
 ```shell
-git clone --recurse-submodules git@github.com:shuai132/asio_net.git
+git clone --recurse-submodules https://github.com/shuai132/asio_net.git
 ```
 
 or
 
 ```shell
-git clone git@github.com:shuai132/asio_net.git && cd asio_net
+git clone https://github.com/shuai132/asio_net.git && cd asio_net
 git submodule update --init --recursive
 ```
 
