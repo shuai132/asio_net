@@ -15,13 +15,7 @@ class rpc_server_t : noncopyable {
   rpc_server_t(asio::io_context& io_context, uint16_t port, rpc_config rpc_config = {})
       : io_context_(io_context), rpc_config_(rpc_config), server_(io_context, port, rpc_config.to_tcp_config()) {
     static_assert(T == detail::socket_type::normal, "");
-    server_.on_session = [this](std::weak_ptr<detail::tcp_session_t<T>> ws) {
-      auto session = std::make_shared<rpc_session_t<T>>(io_context_, rpc_config_);
-      if (!session->init(std::move(ws))) return;
-      if (on_session) {
-        on_session(session);
-      }
-    };
+    init();
   }
 
 #ifdef ASIO_NET_ENABLE_SSL
