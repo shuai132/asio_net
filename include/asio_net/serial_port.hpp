@@ -1,6 +1,7 @@
 #pragma once
 
 #include <deque>
+#include <memory>
 #include <utility>
 
 #include "asio.hpp"
@@ -15,6 +16,14 @@ class serial_port : detail::noncopyable {
  public:
   explicit serial_port(asio::io_context& io_context, serial_config config = {})
       : io_context_(io_context), serial_(io_context), config_(std::move(config)) {}
+
+  ~serial_port() {
+    is_alive_.reset();
+    asio::error_code ec;
+    if (reconnect_timer_) reconnect_timer_->cancel();
+    serial_.cancel(ec);
+    serial_.close(ec);
+  }
 
   template <typename Option>
   inline void set_option(const Option& option) {
@@ -106,14 +115,17 @@ class serial_port : detail::noncopyable {
 
     auto keeper = std::make_unique<detail::message>(std::move(msg));
     auto buffer = asio::buffer(keeper->body);
-    asio::async_write(serial_, buffer, [this, keeper = std::move(keeper)](const std::error_code& ec, std::size_t /*length*/) {
+    auto alive = std::weak_ptr<void>(is_alive_);
+    asio::async_write(serial_, buffer, [this, keeper = std::move(keeper), alive](const std::error_code& ec, std::size_t /*length*/) {
+      if (alive.expired()) return;
       send_buffer_now_ -= (uint32_t)keeper->body.size();
       if (ec) {
         do_close();
       }
 
       if (!write_msg_queue_.empty()) {
-        asio::post(io_context_, [this, msg = std::move(write_msg_queue_.front())]() mutable {
+        asio::post(io_context_, [this, msg = std::move(write_msg_queue_.front()), alive]() mutable {
+          if (alive.expired()) return;
           do_write(std::move(msg), true);
         });
         write_msg_queue_.pop_front();
@@ -145,7 +157,9 @@ class serial_port : detail::noncopyable {
   }
 
   void do_read_data() {
-    serial_.async_read_some(asio::buffer(read_msg_), [this](const std::error_code& ec, std::size_t length) mutable {
+    auto alive = std::weak_ptr<void>(is_alive_);
+    serial_.async_read_some(asio::buffer(read_msg_), [this, alive](const std::error_code& ec, std::size_t length) mutable {
+      if (alive.expired()) return;
       if (!ec) {
         if (on_data) on_data(std::string(read_msg_.data(), length));
         do_read_data();
@@ -158,7 +172,9 @@ class serial_port : detail::noncopyable {
   void check_reconnect() {
     if (reconnect_timer_) {
       reconnect_timer_->expires_after(std::chrono::milliseconds(reconnect_ms_));
-      reconnect_timer_->async_wait([this](std::error_code ec) {
+      auto alive = std::weak_ptr<void>(is_alive_);
+      reconnect_timer_->async_wait([this, alive](std::error_code ec) {
+        if (alive.expired()) return;
         if (!ec) {
           try_open();
         }
@@ -185,6 +201,7 @@ class serial_port : detail::noncopyable {
 
   std::unique_ptr<asio::steady_timer> reconnect_timer_;
   uint32_t reconnect_ms_ = 0;
+  std::shared_ptr<void> is_alive_ = std::make_shared<uint8_t>();
 };
 
 }  // namespace asio_net

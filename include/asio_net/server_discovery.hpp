@@ -1,9 +1,12 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <functional>
+#include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "asio.hpp"
 #include "detail/log.h"
@@ -45,7 +48,9 @@ class receiver {
       auto timer = std::make_shared<asio::steady_timer>(socket_.get_executor());
       timer->expires_after(std::chrono::seconds(1));
       auto timer_p = timer.get();
-      timer_p->async_wait([this, timer = std::move(timer)](const std::error_code&) mutable {
+      auto alive = std::weak_ptr<void>(is_alive_);
+      timer_p->async_wait([this, timer = std::move(timer), alive](const std::error_code&) mutable {
+        if (alive.expired()) return;
         try_init();
         timer = nullptr;
       });
@@ -53,7 +58,9 @@ class receiver {
   }
 
   void do_receive() {
-    socket_.async_receive_from(asio::buffer(data_), sender_endpoint_, [this](const std::error_code& ec, std::size_t length) {
+    auto alive = std::weak_ptr<void>(is_alive_);
+    socket_.async_receive_from(asio::buffer(data_), sender_endpoint_, [this, alive](const std::error_code& ec, std::size_t length) {
+      if (alive.expired()) return;
       if (!ec) {
         std::vector<std::string> msgs;
         {
@@ -79,12 +86,22 @@ class receiver {
     });
   }
 
+ public:
+  ~receiver() {
+    is_alive_.reset();
+    asio::error_code ec;
+    socket_.cancel(ec);
+    socket_.close(ec);
+  }
+
+ private:
   asio::ip::udp::socket socket_;
   asio::ip::udp::endpoint sender_endpoint_;
   std::array<char, 1024> data_;
   service_found_handle_t service_found_handle_;
   std::string addr_;
   uint16_t port_;
+  std::shared_ptr<void> is_alive_ = std::make_shared<uint8_t>();
 };
 
 class sender {
@@ -99,9 +116,19 @@ class sender {
     do_send();
   }
 
+  ~sender() {
+    is_alive_.reset();
+    asio::error_code ec;
+    timer_.cancel();
+    socket_.cancel(ec);
+    socket_.close(ec);
+  }
+
  private:
   void do_send() {
-    socket_.async_send_to(asio::buffer(message_), endpoint_, [this](const std::error_code& ec, std::size_t /*length*/) {
+    auto alive = std::weak_ptr<void>(is_alive_);
+    socket_.async_send_to(asio::buffer(message_), endpoint_, [this, alive](const std::error_code& ec, std::size_t /*length*/) {
+      if (alive.expired()) return;
       if (ec) {
         ASIO_NET_LOGE("server_discovery: sender: err: %s", ec.message().c_str());
       }
@@ -111,7 +138,9 @@ class sender {
 
   void do_send_next() {
     timer_.expires_after(std::chrono::seconds(send_period_sec_));
-    timer_.async_wait([this](const std::error_code& ec) {
+    auto alive = std::weak_ptr<void>(is_alive_);
+    timer_.async_wait([this, alive](const std::error_code& ec) {
+      if (alive.expired()) return;
       if (!ec) do_send();
     });
   }
@@ -122,6 +151,7 @@ class sender {
   asio::steady_timer timer_;
   uint32_t send_period_sec_;
   std::string message_;
+  std::shared_ptr<void> is_alive_ = std::make_shared<uint8_t>();
 };
 
 }  // namespace server_discovery

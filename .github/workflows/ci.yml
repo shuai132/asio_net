@@ -79,6 +79,10 @@ jobs:
         working-directory: build
         run: ./asio_net_test_tcp${{ matrix.env.BIN_SUFFIX }}
 
+      - name: Test TCP (server lifetime)
+        working-directory: build
+        run: ./asio_net_test_tcp_server_lifetime${{ matrix.env.BIN_SUFFIX }}
+
       - name: Test TCP (big data)
         working-directory: build
         run: ./asio_net_test_tcp_bigdata${{ matrix.env.BIN_SUFFIX }}

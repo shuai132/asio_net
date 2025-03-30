@@ -13,20 +13,22 @@ namespace detail {
 template <detail::socket_type T>
 class dds_client_t {
  public:
-  explicit dds_client_t(asio::io_context& io_context) : io_context_(io_context), client_(io_context, rpc_config{.rpc = rpc_}) {
+  explicit dds_client_t(asio::io_context& io_context) : io_context_(io_context), client_(io_context, make_rpc_config()) {
     init();
   }
 
 #ifdef ASIO_NET_ENABLE_SSL
   explicit dds_client_t(asio::io_context& io_context, asio::ssl::context& ssl_context)
-      : io_context_(io_context), client_(io_context, ssl_context, rpc_config{.rpc = rpc_}) {
+      : io_context_(io_context), client_(io_context, ssl_context, make_rpc_config()) {
     init();
   }
 #endif
 
   template <typename D = std::string>
   void publish(std::string topic, D data = {}) {
-    auto msg = dds::Msg{.topic = std::move(topic), .data = rpc_core::serialize(std::move(data))};
+    dds::Msg msg;
+    msg.topic = std::move(topic);
+    msg.data = rpc_core::serialize(std::move(data));
     dispatch_publish(msg);
     rpc_->cmd(cmd_publish)->msg(std::move(msg))->retry(-1)->call();
   }
@@ -135,6 +137,12 @@ class dds_client_t {
   }
 
  private:
+  rpc_config make_rpc_config() {
+    rpc_config config;
+    config.rpc = rpc_;
+    return config;
+  }
+
   void init() {
     client_.set_reconnect(1000);
     client_.on_open = [this](const dds::rpc_s&) {

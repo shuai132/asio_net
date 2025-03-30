@@ -1,9 +1,11 @@
 #pragma once
 
+#include <memory>
 #include <utility>
 
 #include "../config.hpp"
 #include "asio.hpp"
+#include "callback.hpp"
 #include "tcp_channel_t.hpp"
 
 namespace asio_net {
@@ -69,6 +71,13 @@ class tcp_server_t {
     config_.init();
   }
 
+  ~tcp_server_t() {
+    is_alive_.reset();
+    asio::error_code ec;
+    acceptor_.cancel(ec);
+    acceptor_.close(ec);
+  }
+
  public:
   void start(bool loop = false) {
     do_accept<T>();
@@ -95,16 +104,20 @@ class tcp_server_t {
 #endif
   typename socket_impl<T>::acceptor acceptor_;
   tcp_config config_;
+  std::shared_ptr<void> is_alive_ = std::make_shared<uint8_t>();
 };
 
 template <>
 template <>
 inline void tcp_server_t<socket_type::normal>::do_accept<socket_type::normal>() {
-  acceptor_.async_accept([this](const std::error_code& ec, socket socket) {
+  acceptor_.async_accept([this, alive = std::weak_ptr<void>(is_alive_)](const std::error_code& ec, socket socket) {
+    if (alive.expired()) return;
     if (!ec) {
       auto session = std::make_shared<tcp_session_t<socket_type::normal>>(std::move(socket), config_);
       session->start();
-      if (on_session) on_session(session);
+      auto callback = detail::hold_callback(on_session);
+      if (callback) callback(session);
+      if (alive.expired()) return;
       tcp_server_t<socket_type::normal>::do_accept<socket_type::normal>();
     } else {
       ASIO_NET_LOGD("do_accept: %s", ec.message().c_str());
@@ -115,11 +128,14 @@ inline void tcp_server_t<socket_type::normal>::do_accept<socket_type::normal>() 
 template <>
 template <>
 inline void tcp_server_t<socket_type::domain>::do_accept<socket_type::domain>() {
-  acceptor_.async_accept([this](const std::error_code& ec, socket socket) {
+  acceptor_.async_accept([this, alive = std::weak_ptr<void>(is_alive_)](const std::error_code& ec, socket socket) {
+    if (alive.expired()) return;
     if (!ec) {
       auto session = std::make_shared<tcp_session_t<socket_type::domain>>(std::move(socket), config_);
       session->start();
-      if (on_session) on_session(session);
+      auto callback = detail::hold_callback(on_session);
+      if (callback) callback(session);
+      if (alive.expired()) return;
       tcp_server_t<socket_type::domain>::do_accept<socket_type::domain>();
     } else {
       ASIO_NET_LOGD("do_accept: %s", ec.message().c_str());
@@ -131,11 +147,13 @@ inline void tcp_server_t<socket_type::domain>::do_accept<socket_type::domain>() 
 template <>
 template <>
 inline void tcp_server_t<socket_type::ssl>::do_accept<socket_type::ssl>() {
-  acceptor_.async_accept([this](const std::error_code& ec, asio::ip::tcp::socket socket) {
+  acceptor_.async_accept([this, alive = std::weak_ptr<void>(is_alive_)](const std::error_code& ec, asio::ip::tcp::socket socket) {
+    if (alive.expired()) return;
     if (!ec) {
       using ssl_stream = typename socket_impl<socket_type::ssl>::socket;
       auto session = std::make_shared<tcp_session_t<socket_type::ssl>>(ssl_stream(std::move(socket), ssl_context_), config_);
-      session->async_handshake([this, session](const std::error_code& error) {
+      session->async_handshake([this, alive, session](const std::error_code& error) {
+        if (alive.expired()) return;
         if (!error) {
           if (on_session) on_session(session);
         } else {

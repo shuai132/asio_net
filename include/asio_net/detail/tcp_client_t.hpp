@@ -68,7 +68,8 @@ class tcp_client_t : public tcp_channel_t<T> {
   void check_reconnect() {
     if (!is_open && reconnect_timer_) {
       reconnect_timer_->expires_after(std::chrono::milliseconds(reconnect_ms_));
-      reconnect_timer_->async_wait([this](const asio::error_code& ec) {
+      reconnect_timer_->async_wait([this, alive = std::weak_ptr<void>(this->is_alive_)](const asio::error_code& ec) {
+        if (alive.expired()) return;
         if (is_open) return;
         if (!ec) {
           ASIO_NET_LOGD("reconnect...");
@@ -113,9 +114,11 @@ class tcp_client_t : public tcp_channel_t<T> {
 
   void do_open(const std::string& endpoint) {
     static_assert(T == socket_type::domain, "");
-    socket_.async_connect(typename socket_impl<T>::endpoint(endpoint), [this](const std::error_code& ec) {
-      async_connect_handler<socket_type::domain>(ec);
-    });
+    socket_.async_connect(typename socket_impl<T>::endpoint(endpoint),
+                          [this, alive = std::weak_ptr<void>(this->is_alive_)](const std::error_code& ec) {
+                            if (alive.expired()) return;
+                            async_connect_handler<socket_type::domain>(ec);
+                          });
   }
 
   template <socket_type>
@@ -188,7 +191,8 @@ template <>
 inline void tcp_client_t<socket_type::ssl>::async_connect_handler<socket_type::ssl>(const std::error_code& ec) {
   if (!ec) {
     this->init_socket();
-    socket_.async_handshake(asio::ssl::stream_base::client, [this](const std::error_code& error) {
+    socket_.async_handshake(asio::ssl::stream_base::client, [this, alive = std::weak_ptr<void>(this->is_alive_)](const std::error_code& error) {
+      if (alive.expired()) return;
       if (!error) {
         tcp_channel_t<socket_type::ssl>::on_close = [this] {
           is_open = false;

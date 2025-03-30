@@ -91,7 +91,9 @@ rpc->subscribe("cmd", [](const std::string& data) -> std::string {
 });
 
 asio::io_context context;
-rpc_server server(context, PORT, rpc_config{.rpc = rpc});
+rpc_config config;
+config.rpc = rpc;
+rpc_server server(context, PORT, config);
 server.start(true);
 ```
 
@@ -99,7 +101,9 @@ server.start(true);
 // client
 auto rpc = rpc_core::rpc::create();
 asio::io_context context;
-rpc_client client(context, rpc_config{.rpc = rpc});
+rpc_config config;
+config.rpc = rpc;
+rpc_client client(context, config);
 client.open("localhost", PORT);
 client.run();
 
