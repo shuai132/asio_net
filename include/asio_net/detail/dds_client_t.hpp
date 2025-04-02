@@ -8,6 +8,7 @@
 #include "rpc_client_t.hpp"
 
 namespace asio_net {
+namespace detail {
 
 template <detail::socket_type T>
 class dds_client_t {
@@ -182,4 +183,5 @@ class dds_client_t {
   std::unordered_map<std::string, std::vector<dds::handle_s>> topic_handles_map_;
 };
 
+}  // namespace detail
 }  // namespace asio_net
