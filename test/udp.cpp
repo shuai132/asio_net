@@ -1,7 +1,7 @@
-#include <atomic>
+#include <chrono>
 #include <cstdio>
 #include <cstdlib>
-#include <thread>
+#include <limits>
 
 #include "asio_net/udp_client.hpp"
 #include "asio_net/udp_server.hpp"
@@ -13,52 +13,68 @@ using namespace asio_net;
 const uint16_t PORT = 6666;
 
 int main(int argc, char** argv) {
-  static uint32_t test_count_max = 10000;
-  static std::atomic_uint32_t test_count_received;
+  // Keep assertion diagnostics visible when stdout is redirected by CI.
+  std::setvbuf(stdout, nullptr, _IONBF, 0);
+  uint32_t test_count_max = 1000;
   if (argc >= 2) {
-    test_count_max = std::strtol(argv[1], nullptr, 10);
+    char* end = nullptr;
+    const auto count = std::strtol(argv[1], &end, 10);
+    ASSERT(end != argv[1] && *end == '\0');
+    ASSERT(count > 0 && static_cast<unsigned long>(count) <= (std::numeric_limits<uint32_t>::max)());
+    test_count_max = static_cast<uint32_t>(count);
   }
 
-  std::thread([] {
-    asio::io_context context;
-    udp_server server(context, PORT);
-    server.on_data = [](uint8_t* data, size_t size, const udp_server::endpoint& from) {
-      (void)data;
-      (void)size;
-      (void)from;
-#ifndef ASIO_NET_DISABLE_ON_DATA_PRINT
-      LOG("on_data: %s", std::string((char*)data, size).c_str());
-#endif
-      test_count_received++;
-    };
-    server.start();
-  }).detach();
+  asio::io_context context;
+  // Bind before sending so thread scheduling cannot lose the first datagrams.
+  udp_server server(context, PORT);
+  udp_client client(context);
+  const udp_client::endpoint endpoint(asio::ip::address_v4::loopback(), PORT);
+  uint32_t test_count_received = 0;
+  uint32_t send_completed_count = 0;
+  bool timed_out = false;
 
-  std::atomic_uint32_t send_failed_count{0};
-  std::thread([&] {
-    asio::io_context context;
-    udp_client client(context);
-    asio::post(context, [&] {
-      udp_client::endpoint endpoint(asio::ip::make_address_v4("127.0.0.1"), PORT);
-      for (uint32_t i = 0; i < test_count_max; ++i) {
-        auto data = std::to_string(i);
-        client.send_to(data, endpoint, [&](const std::error_code& ec, std::size_t size) {
-          (void)size;
-          if (ec) {
-            send_failed_count++;
-          }
-        });
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-      }
+  asio::steady_timer deadline(context, std::chrono::seconds(10));
+  deadline.async_wait([&](const std::error_code& ec) {
+    if (ec) return;
+    timed_out = true;
+    std::fprintf(stderr, "UDP timeout: received=%u, send_completed=%u, expected=%u\n",
+                 test_count_received, send_completed_count, test_count_max);
+    context.stop();
+  });
+
+  const auto finish_if_complete = [&] {
+    if (test_count_received == test_count_max && send_completed_count == test_count_max) {
+      context.stop();
+    }
+  };
+  const auto send_next = [&] {
+    const auto data = std::to_string(test_count_received);
+    client.send_to(data, endpoint, [&, expected_size = data.size()](const std::error_code& ec, std::size_t size) {
+      if (ec) std::fprintf(stderr, "UDP send failed: %s\n", ec.message().c_str());
+      ASSERT(!ec);
+      ASSERT(size == expected_size);
+      ++send_completed_count;
+      finish_if_complete();
     });
-    context.run();
-  }).join();
+  };
+  server.on_data = [&](uint8_t* data, size_t size, const udp_server::endpoint& from) {
+    ASSERT(from.address() == endpoint.address());
+    ASSERT(std::string(reinterpret_cast<char*>(data), size) == std::to_string(test_count_received));
+    ++test_count_received;
+    // A send completion does not guarantee delivery. Keep only one datagram in
+    // flight, advancing on receipt rather than flooding the UDP receive queue.
+    if (test_count_received < test_count_max) send_next();
+    finish_if_complete();
+  };
 
-  std::this_thread::sleep_for(std::chrono::seconds(1));
-  LOG("test_count_max: %d", test_count_max);
-  LOG("test_count_received: %d", test_count_received.load());
-  LOG("send_failed_count: %d", send_failed_count.load());
-  LOG("lost: %f%%", 100 * (double)(test_count_max - test_count_received) / test_count_max);
-  ASSERT(test_count_max - test_count_received == send_failed_count);
+  send_next();
+  context.run();
+
+  LOG("test_count_max: %u", test_count_max);
+  LOG("test_count_received: %u", test_count_received);
+  LOG("send_completed_count: %u", send_completed_count);
+  ASSERT(!timed_out);
+  ASSERT(test_count_received == test_count_max);
+  ASSERT(send_completed_count == test_count_max);
   return EXIT_SUCCESS;
 }

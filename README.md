@@ -23,6 +23,7 @@ and [rpc_core](https://github.com/shuai132/rpc_core)
 ## Requirements
 
 * [asio](http://think-async.com/Asio/)
+* [nlohmann/json](https://github.com/nlohmann/json) (for building tests)
 * C++14
 * Optional: C++20 (for rpc coroutine api, co_await co_call)
 
@@ -39,6 +40,19 @@ or
 ```shell
 git clone https://github.com/shuai132/asio_net.git && cd asio_net
 git submodule update --init --recursive
+```
+
+* build tests
+
+To build the tests, set `ASIO_PATH` to the asio include directory and set
+`NLOHMANN_JSON_PATH` to the include directory containing `nlohmann/json.hpp`.
+
+```shell
+git clone https://github.com/chriskohlhoff/asio.git -b asio-1-32-0 --depth=1
+git clone https://github.com/nlohmann/json.git --depth=1
+
+ASIO_PATH=asio/asio/include NLOHMANN_JSON_PATH=json/include cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+cmake --build build -j
 ```
 
 The following are examples of using each module. For complete unit tests,
