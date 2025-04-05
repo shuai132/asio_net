@@ -74,9 +74,14 @@ jobs:
       - name: Init ASIO
         run: git clone https://github.com/chriskohlhoff/asio.git -b asio-1-32-0 --depth=1
 
+      - name: Init nlohmann/json
+        working-directory: ..
+        run: git clone https://github.com/nlohmann/json.git -b v3.11.2 --depth=1 nlohmann_json
+
       - name: Configure (${{ matrix.configuration }}) sanitize_address:${{ matrix.sanitize_address }}
         env:
           ASIO_PATH: asio/asio/include
+          NLOHMANN_JSON_PATH: nlohmann_json/include
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.configuration }} ${{ matrix.env.CMAKE_OPTIONS }} -DASIO_NET_DISABLE_ON_DATA_PRINT=ON -DASIO_NET_ENABLE_SANITIZE_ADDRESS=${{ matrix.sanitize_address }}
 
       - name: Build with ${{ matrix.compiler }}
