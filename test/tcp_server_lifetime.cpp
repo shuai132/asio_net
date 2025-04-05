@@ -1,4 +1,5 @@
 #include <chrono>
+#include <cstdint>
 #include <cstdio>
 #include <memory>
 #include <string>
@@ -21,13 +22,18 @@ void check_destroy_in_callback(asio::io_context& context, std::unique_ptr<Server
   server->start();
   for (int expected = 1; expected <= 2; ++expected) {
     typename Protocol::socket peer(context);
-    peer.connect(endpoint);
+    bool connected = false;
+    peer.async_connect(endpoint, [&](const std::error_code& ec) {
+      ASSERT(!ec);
+      connected = true;
+    });
     context.restart();
     const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
-    while (calls < expected && std::chrono::steady_clock::now() < deadline) {
+    while ((!connected || calls < expected) && std::chrono::steady_clock::now() < deadline) {
       if (context.run_one_until(deadline) == 0) break;
     }
     ASSERT(calls == expected);
+    ASSERT(connected);
   }
   ASSERT(!server);
   // Drain cancelled operations too, so callbacks queued before destruction run.
@@ -36,7 +42,46 @@ void check_destroy_in_callback(asio::io_context& context, std::unique_ptr<Server
   ASSERT(context.stopped());
 }
 
+// Destroy a client with a raw, frame-header, or frame-body read still pending.
+// MSVC Debug checks that Asio's receive buffer survives cancellation completion.
+void check_destroy_client(bool auto_pack, bool partial_frame) {
+  asio::io_context context;
+  asio::ip::tcp::acceptor acceptor(context, {asio::ip::tcp::v4(), 0});
+  asio::ip::tcp::socket peer(context);
+  bool accepted = false;
+  acceptor.async_accept(peer, [&](const std::error_code& ec) {
+    ASSERT(!ec);
+    accepted = true;
+  });
+  asio_net::tcp_config config;
+  config.auto_pack = auto_pack;
+  auto client = std::make_unique<asio_net::tcp_client>(context, config);
+  bool opened = false;
+  client->on_open = [&] { opened = true; };
+  client->on_open_failed = [](const std::error_code& ec) { ASSERT(!ec); };
+  client->open("127.0.0.1", acceptor.local_endpoint().port());
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+  while ((!opened || !accepted) && std::chrono::steady_clock::now() < deadline) {
+    if (context.run_one_until(deadline) == 0) break;
+  }
+  ASSERT(opened && accepted);
+  if (partial_frame) {
+    const uint32_t length = 1024;
+    asio::write(peer, asio::buffer(&length, sizeof(length)));
+    // Process the header and leave the body read pending.
+    ASSERT(context.run_one_until(deadline) != 0);
+  }
+  client.reset();
+  peer.close();
+  context.restart();
+  context.run_for(std::chrono::seconds(5));
+  ASSERT(context.stopped());
+}
+
 int main() {
+  check_destroy_client(false, false);
+  check_destroy_client(true, false);
+  check_destroy_client(true, true);
   {
     asio::io_context context;
     auto client = std::make_unique<asio_net::tcp_client>(context);
@@ -46,12 +91,14 @@ int main() {
     context.run_for(std::chrono::seconds(5));
     ASSERT(context.stopped());
   }
-  {
+  for (bool auto_pack : {false, true}) {
     asio::io_context context;
     asio::ip::tcp::acceptor probe(context, {asio::ip::tcp::v4(), 0});
     auto port = probe.local_endpoint().port();
     probe.close();
-    auto server = std::make_unique<asio_net::tcp_server>(context, port);
+    asio_net::tcp_config config;
+    config.auto_pack = auto_pack;
+    auto server = std::make_unique<asio_net::tcp_server>(context, port, config);
     check_destroy_in_callback<asio_net::tcp_server, asio::ip::tcp>(
         context, std::move(server), {asio::ip::address_v4::loopback(), port});
   }
