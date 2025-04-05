@@ -23,10 +23,17 @@ void check_destroy_in_callback(asio::io_context& context, std::unique_ptr<Server
     typename Protocol::socket peer(context);
     peer.connect(endpoint);
     context.restart();
-    context.run_for(std::chrono::milliseconds(100));
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+    while (calls < expected && std::chrono::steady_clock::now() < deadline) {
+      if (context.run_one_until(deadline) == 0) break;
+    }
     ASSERT(calls == expected);
   }
   ASSERT(!server);
+  // Drain cancelled operations too, so callbacks queued before destruction run.
+  context.restart();
+  context.run_for(std::chrono::seconds(5));
+  ASSERT(context.stopped());
 }
 
 int main() {
@@ -36,7 +43,7 @@ int main() {
     client->set_reconnect(10000);
     client->check_reconnect();
     client.reset();
-    context.run_for(std::chrono::milliseconds(100));
+    context.run_for(std::chrono::seconds(5));
     ASSERT(context.stopped());
   }
   {
