@@ -164,6 +164,10 @@ class tcp_channel_t : private noncopyable {
 
     // block wait send_buffer idle
     while (msg.size() + send_buffer_now_ > config_.max_send_buffer_size) {
+      if (!is_open()) {
+        ASIO_NET_LOGE("write: socket closed");
+        return;
+      }
       ASIO_NET_LOGV("block wait send_buffer idle");
       static_cast<asio::io_context*>(&socket_.get_executor().context())->run_one();
     }
