@@ -98,6 +98,31 @@ if (ASIO_NET_BUILD_TEST)
     add_executable(${PROJECT_NAME}_test_rpc_c_ping test/rpc_c_ping.cpp)
     add_executable(${PROJECT_NAME}_test_rpc_s test/rpc_s.cpp)
     add_executable(${PROJECT_NAME}_test_rpc_c test/rpc_c.cpp)
+    set(ASIO_NET_NLOHMANN_JSON_SEARCH_PATHS)
+    if (DEFINED ENV{NLOHMANN_JSON_PATH})
+        list(APPEND ASIO_NET_NLOHMANN_JSON_SEARCH_PATHS "$ENV{NLOHMANN_JSON_PATH}")
+        if (NOT IS_ABSOLUTE "$ENV{NLOHMANN_JSON_PATH}")
+            list(APPEND ASIO_NET_NLOHMANN_JSON_SEARCH_PATHS "${CMAKE_CURRENT_LIST_DIR}/../$ENV{NLOHMANN_JSON_PATH}")
+        endif ()
+    endif ()
+    find_path(ASIO_NET_NLOHMANN_JSON_INCLUDE_DIR nlohmann/json.hpp
+            PATHS ${ASIO_NET_NLOHMANN_JSON_SEARCH_PATHS}
+            PATH_SUFFIXES include
+            NO_DEFAULT_PATH
+    )
+    if (NOT ASIO_NET_NLOHMANN_JSON_INCLUDE_DIR)
+        message(FATAL_ERROR "nlohmann/json.hpp not found. Set NLOHMANN_JSON_PATH to the include directory containing nlohmann/json.hpp.")
+    endif ()
+    function(add_rpc_json_test target_suffix source)
+        add_executable(${PROJECT_NAME}_test_${target_suffix}_json ${source})
+        target_compile_definitions(${PROJECT_NAME}_test_${target_suffix}_json PRIVATE RPC_CORE_SERIALIZE_USE_NLOHMANN_JSON)
+        target_include_directories(${PROJECT_NAME}_test_${target_suffix}_json PRIVATE
+                ${ASIO_NET_NLOHMANN_JSON_INCLUDE_DIR}
+        )
+    endfunction()
+    add_rpc_json_test(rpc test/rpc.cpp)
+    add_rpc_json_test(rpc_s test/rpc_s.cpp)
+    add_rpc_json_test(rpc_c test/rpc_c.cpp)
     add_executable(${PROJECT_NAME}_test_domain_rpc test/domain_rpc.cpp)
     add_executable(${PROJECT_NAME}_test_serial_port test/serial_port.cpp)
     add_executable(${PROJECT_NAME}_test_dds_s test/dds_s.cpp)
