@@ -39,13 +39,15 @@ struct rpc_config {
   uint32_t socket_send_buffer_size = UINT32_MAX;
   uint32_t socket_recv_buffer_size = UINT32_MAX;
 
-  tcp_config to_tcp_config() {
-    return {.auto_pack = true,
-            .enable_ipv6 = enable_ipv6,
-            .max_body_size = max_body_size,
-            .max_send_buffer_size = max_send_buffer_size,
-            .socket_send_buffer_size = socket_send_buffer_size,
-            .socket_recv_buffer_size = socket_recv_buffer_size};
+  tcp_config to_tcp_config() const {
+    tcp_config config;
+    config.auto_pack = true;
+    config.enable_ipv6 = enable_ipv6;
+    config.max_body_size = max_body_size;
+    config.max_send_buffer_size = max_send_buffer_size;
+    config.socket_send_buffer_size = socket_send_buffer_size;
+    config.socket_recv_buffer_size = socket_recv_buffer_size;
+    return config;
   }
 };
 

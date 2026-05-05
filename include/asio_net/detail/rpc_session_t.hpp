@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cassert>
+#include <memory>
 #include <utility>
 
 #include "noncopyable.hpp"
@@ -25,6 +26,11 @@ class rpc_session_t : noncopyable, public std::enable_shared_from_this<rpc_sessi
   bool init(std::weak_ptr<detail::tcp_channel_t<T>> ws) {
     tcp_session_ = std::move(ws);
     auto tcp_session = tcp_session_.lock();
+    if (!tcp_session) {
+      ASIO_NET_LOGD("tcp_session expired");
+      return false;
+    }
+    auto self = std::weak_ptr<rpc_session_t<T>>(this->shared_from_this());
 
     if (rpc_config_.rpc) {
       if (rpc_config_.rpc->is_ready()) {
@@ -37,17 +43,25 @@ class rpc_session_t : noncopyable, public std::enable_shared_from_this<rpc_sessi
       rpc = rpc_core::rpc::create();
     }
 
-    rpc->set_timer([this](uint32_t ms, rpc_core::rpc::timeout_cb cb) {
-      auto timer = std::make_shared<asio::steady_timer>(io_context_);
+    rpc->set_timer([self](uint32_t ms, rpc_core::rpc::timeout_cb cb) {
+      auto session = self.lock();
+      if (!session) return;
+      auto timer = std::make_shared<asio::steady_timer>(session->io_context_);
       timer->expires_after(std::chrono::milliseconds(ms));
       auto tp = timer.get();
-      tp->async_wait([timer = std::move(timer), cb = std::move(cb)](const std::error_code&) {
+      tp->async_wait([timer = std::move(timer), cb = std::move(cb)](const std::error_code& ec) {
+        if (ec) return;
         cb();
       });
     });
 
-    rpc->get_connection()->send_package_impl = [this](std::string data) {
-      auto tcp_session = tcp_session_.lock();
+    rpc->get_connection()->send_package_impl = [self](std::string data) {
+      auto session = self.lock();
+      if (!session) {
+        ASIO_NET_LOGW("rpc_session expired");
+        return;
+      }
+      auto tcp_session = session->tcp_session_.lock();
       if (tcp_session) {
         tcp_session->send(std::move(data));
       } else {
@@ -73,12 +87,17 @@ class rpc_session_t : noncopyable, public std::enable_shared_from_this<rpc_sessi
       // post delay destroy rpc_session, ensure rpc.rsp() callback finish
       asio::post(io_context_, [rpc_session = std::move(rpc_session)] {});
       // clear tcp_session->on_close, avoid called more than once by close api
-      tcp_session_.lock()->on_close = nullptr;
+      if (auto tcp_session = tcp_session_.lock()) {
+        tcp_session->on_close = nullptr;
+      }
     };
 
     assert(tcp_session->on_data == nullptr);  // ensure it's empty
-    tcp_session->on_data = [this](std::string data) {
-      rpc->get_connection()->on_recv_package(std::move(data));
+    tcp_session->on_data = [self](std::string data) {
+      auto session = self.lock();
+      if (session) {
+        session->rpc->get_connection()->on_recv_package(std::move(data));
+      }
     };
 
     start_ping();

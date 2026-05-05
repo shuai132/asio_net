@@ -1,7 +1,9 @@
 #pragma once
 
 #include <deque>
+#include <memory>
 #include <utility>
+#include <vector>
 
 #include "../config.hpp"
 #include "asio.hpp"
@@ -193,13 +195,19 @@ class tcp_channel_t : private noncopyable {
         socket_, buffer,
         [this, keeper = std::move(keeper), alive = std::weak_ptr<void>(this->is_alive_)](const std::error_code& ec, std::size_t /*length*/) {
           if (alive.expired()) return;
-          send_buffer_now_ -= keeper->body.size();
+          if (send_buffer_now_ >= keeper->body.size()) {
+            send_buffer_now_ -= keeper->body.size();
+          } else {
+            send_buffer_now_ = 0;
+          }
           if (ec) {
             do_close();
+            return;
           }
 
           if (!write_msg_queue_.empty()) {
-            asio::post(socket_.get_executor(), [this, msg = std::move(write_msg_queue_.front())]() mutable {
+            asio::post(socket_.get_executor(), [this, msg = std::move(write_msg_queue_.front()), alive]() mutable {
+              if (alive.expired()) return;
               do_write(std::move(msg), true);
             });
             write_msg_queue_.pop_front();

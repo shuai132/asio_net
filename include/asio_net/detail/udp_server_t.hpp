@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include "asio.hpp"
 #include "log.h"
 #include "noncopyable.hpp"
@@ -33,6 +35,13 @@ class udp_server_t : private noncopyable {
     do_receive();
   }
 
+  ~udp_server_t() {
+    is_alive_.reset();
+    asio::error_code ec;
+    socket_.cancel(ec);
+    socket_.close(ec);
+  }
+
   void start() {
     io_context_.run();
   }
@@ -41,7 +50,9 @@ class udp_server_t : private noncopyable {
 
  private:
   void do_receive() {
-    socket_.async_receive_from(asio::buffer((void*)data_.data(), max_length_), from_endpoint_, [this](const std::error_code& ec, size_t length) {
+    auto alive = std::weak_ptr<void>(is_alive_);
+    socket_.async_receive_from(asio::buffer((void*)data_.data(), max_length_), from_endpoint_, [this, alive](const std::error_code& ec, size_t length) {
+      if (alive.expired()) return;
       if (!ec && length > 0) {
         if (on_data) on_data((uint8_t*)data_.data(), length, from_endpoint_);
         do_receive();
@@ -57,6 +68,7 @@ class udp_server_t : private noncopyable {
   endpoint from_endpoint_;
   uint16_t max_length_;
   std::string data_;
+  std::shared_ptr<void> is_alive_ = std::make_shared<uint8_t>();
 };
 
 }  // namespace detail

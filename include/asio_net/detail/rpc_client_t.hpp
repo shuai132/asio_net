@@ -66,14 +66,16 @@ class rpc_client_t : noncopyable {
     client_->on_open = [this]() {
       auto session = std::make_shared<rpc_session_t<T>>(io_context_, rpc_config_);
       rpc_session_ = session;
-      session->init(client_);
+      if (!session->init(client_)) {
+        rpc_session_.reset();
+        return;
+      }
 
       session->on_close = [this] {
         client_->on_data = nullptr;
         if (on_close) on_close();
       };
 
-      session->start_ping();
       if (on_open) on_open(session->rpc);
     };
 

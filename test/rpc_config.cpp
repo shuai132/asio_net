@@ -28,7 +28,9 @@ int main() {
     });
 
     asio::io_context context;
-    rpc_server server(context, PORT, rpc_config{.rpc = rpc});
+    rpc_config config;
+    config.rpc = rpc;
+    rpc_server server(context, PORT, config);
     server.on_session = [&](const std::weak_ptr<rpc_session>& rs) {
       LOG("on_session:");
       auto session = rs.lock();
@@ -47,7 +49,9 @@ int main() {
     rpc->cmd("cmd")->msg(std::string("hello"))->call();  // no effect
 
     asio::io_context context;
-    rpc_client client(context, rpc_config{.rpc = rpc});
+    rpc_config config;
+    config.rpc = rpc;
+    rpc_client client(context, config);
     client.on_open = [&](const std::shared_ptr<rpc_core::rpc>& rpc_) {
       LOG("client on_open:");
       ASSERT(rpc_ == rpc);

@@ -15,7 +15,9 @@ int main() {
   // server
   std::thread([] {
     asio::io_context context;
-    tcp_server server(context, PORT, tcp_config{.auto_pack = true});
+    tcp_config config;
+    config.auto_pack = true;
+    tcp_server server(context, PORT, config);
     server.on_session = [&](const std::weak_ptr<tcp_session>& ws) {
       LOG("on_session:");
       auto session = ws.lock();
@@ -34,7 +36,9 @@ int main() {
   // client
   std::thread([] {
     asio::io_context context;
-    tcp_client client(context, tcp_config{.auto_pack = true});
+    tcp_config config;
+    config.auto_pack = true;
+    tcp_client client(context, config);
     client.on_open = [&] {
       LOG("client on_open:");
       std::string msg("hello");
