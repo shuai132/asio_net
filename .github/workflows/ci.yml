@@ -91,6 +91,10 @@ jobs:
         working-directory: build
         run: ./asio_net_test_tcp${{ matrix.env.BIN_SUFFIX }}
 
+      - name: Test TCP (open generation)
+        working-directory: build
+        run: ./asio_net_test_tcp_open_generation${{ matrix.env.BIN_SUFFIX }}
+
       - name: Test TCP (big data)
         working-directory: build
         run: ./asio_net_test_tcp_bigdata${{ matrix.env.BIN_SUFFIX }}

@@ -41,7 +41,7 @@ Use C++14 by default; coroutine examples and tests opt into C++20 explicitly. Fo
 
 ## Testing Guidelines
 
-There is no CTest suite; add new test executables in `CMakeLists.txt` under `ASIO_NET_BUILD_TEST`. Prefer focused integration tests in `test/` named after the feature or scenario, for example `tcp_bigdata.cpp` or `rpc_c_open_close.cpp`. Keep network tests deterministic and free ports released promptly. When changing SSL, DDS, domain socket, or coroutine behavior, run the matching executable in addition to the core TCP/UDP/RPC tests.
+There is no CTest suite; add new test executables in `CMakeLists.txt` under `ASIO_NET_BUILD_TEST`. If the test is deterministic and suitable for CI, also add it to `.github/workflows/ci.yml` so GitHub Actions runs it explicitly. Prefer focused integration tests in `test/` named after the feature or scenario, for example `tcp_bigdata.cpp` or `rpc_c_open_close.cpp`. Keep network tests deterministic, use free ports when possible, include bounded timeouts for async race regressions, and release ports promptly. When changing SSL, DDS, domain socket, coroutine behavior, or connection state-machine behavior, run the matching executable in addition to the core TCP/UDP/RPC tests.
 
 ## Commit & Pull Request Guidelines
 

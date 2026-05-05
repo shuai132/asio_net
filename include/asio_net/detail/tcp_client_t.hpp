@@ -29,7 +29,7 @@ class tcp_client_t : public tcp_channel_t<T> {
    */
   void open(std::string host, uint16_t port) {
     open_ = [this, host = std::move(host), port] {
-      do_open(host, port);
+      do_open(host, port, ++open_generation_);
     };
     open_();
   }
@@ -41,12 +41,13 @@ class tcp_client_t : public tcp_channel_t<T> {
    */
   void open(std::string endpoint) {
     open_ = [this, endpoint = std::move(endpoint)] {
-      do_open(endpoint);
+      do_open(endpoint, ++open_generation_);
     };
     open_();
   }
 
   void close(bool need_reconnect = false) {
+    ++open_generation_;
     if (!need_reconnect) {
       cancel_reconnect();
     }
@@ -67,9 +68,11 @@ class tcp_client_t : public tcp_channel_t<T> {
 
   void check_reconnect() {
     if (!is_open && reconnect_timer_) {
+      auto generation = open_generation_;
       reconnect_timer_->expires_after(std::chrono::milliseconds(reconnect_ms_));
-      reconnect_timer_->async_wait([this, alive = std::weak_ptr<void>(this->is_alive_)](const asio::error_code& ec) {
+      reconnect_timer_->async_wait([this, alive = std::weak_ptr<void>(this->is_alive_), generation](const asio::error_code& ec) {
         if (alive.expired()) return;
+        if (!is_current_open(generation)) return;
         if (is_open) return;
         if (!ec) {
           ASIO_NET_LOGD("reconnect...");
@@ -90,39 +93,48 @@ class tcp_client_t : public tcp_channel_t<T> {
   }
 
  private:
-  void do_open(const std::string& host, uint16_t port) {
+  bool is_current_open(uint32_t generation) const {
+    return generation == open_generation_;
+  }
+
+  void do_open(const std::string& host, uint16_t port, uint32_t generation) {
     static_assert(T == socket_type::normal || T == socket_type::ssl, "");
     auto resolver = std::make_unique<typename socket_impl<T>::resolver>(io_context_);
     auto rp = resolver.get();
     rp->async_resolve(host, std::to_string(port),
-                      [this, resolver = std::move(resolver), alive = std::weak_ptr<void>(this->is_alive_)](
+                      [this, resolver = std::move(resolver), alive = std::weak_ptr<void>(this->is_alive_), generation](
                           const std::error_code& ec, const typename socket_impl<T>::resolver::results_type& endpoints) mutable {
                         if (alive.expired()) return;
+                        if (!is_current_open(generation)) return;
                         if (!ec) {
-                          asio::async_connect(tcp_channel_t<T>::get_socket(), endpoints,
-                                              [this, alive = std::move(alive)](const std::error_code& ec, const typename socket_impl<T>::endpoint&) {
-                                                if (alive.expired()) return;
-                                                async_connect_handler<T>(ec);
-                                              });
+                          asio::async_connect(
+                              tcp_channel_t<T>::get_socket(), endpoints,
+                              [this, alive = std::move(alive), generation](const std::error_code& ec, const typename socket_impl<T>::endpoint&) {
+                                if (alive.expired()) return;
+                                if (!is_current_open(generation)) return;
+                                async_connect_handler<T>(ec, generation);
+                              });
                         } else {
                           tcp_channel_t<T>::close_socket();  // release resource
                           if (on_open_failed) on_open_failed(ec);
+                          if (!is_current_open(generation)) return;
                           check_reconnect();
                         }
                       });
   }
 
-  void do_open(const std::string& endpoint) {
+  void do_open(const std::string& endpoint, uint32_t generation) {
     static_assert(T == socket_type::domain, "");
     socket_.async_connect(typename socket_impl<T>::endpoint(endpoint),
-                          [this, alive = std::weak_ptr<void>(this->is_alive_)](const std::error_code& ec) {
+                          [this, alive = std::weak_ptr<void>(this->is_alive_), generation](const std::error_code& ec) {
                             if (alive.expired()) return;
-                            async_connect_handler<socket_type::domain>(ec);
+                            if (!is_current_open(generation)) return;
+                            async_connect_handler<socket_type::domain>(ec, generation);
                           });
   }
 
   template <socket_type>
-  void async_connect_handler(const std::error_code& ec);
+  void async_connect_handler(const std::error_code& ec, uint32_t generation);
 
  public:
   std::function<void()> on_open;
@@ -138,12 +150,14 @@ class tcp_client_t : public tcp_channel_t<T> {
   tcp_config config_;
   std::unique_ptr<asio::steady_timer> reconnect_timer_;
   uint32_t reconnect_ms_ = 0;
+  uint32_t open_generation_ = 0;
   std::function<void()> open_;
 };
 
 template <>
 template <>
-inline void tcp_client_t<socket_type::normal>::async_connect_handler<socket_type::normal>(const std::error_code& ec) {
+inline void tcp_client_t<socket_type::normal>::async_connect_handler<socket_type::normal>(const std::error_code& ec, uint32_t generation) {
+  if (!is_current_open(generation)) return;
   if (!ec) {
     this->init_socket();
     tcp_channel_t<socket_type::normal>::on_close = [this] {
@@ -153,19 +167,22 @@ inline void tcp_client_t<socket_type::normal>::async_connect_handler<socket_type
     };
     is_open = true;
     if (on_open) on_open();
+    if (!is_current_open(generation)) return;
     if (reconnect_timer_) {
       reconnect_timer_->cancel();
     }
     this->do_read_start();
   } else {
     if (on_open_failed) on_open_failed(ec);
+    if (!is_current_open(generation)) return;
     check_reconnect();
   }
 }
 
 template <>
 template <>
-inline void tcp_client_t<socket_type::domain>::async_connect_handler<socket_type::domain>(const std::error_code& ec) {
+inline void tcp_client_t<socket_type::domain>::async_connect_handler<socket_type::domain>(const std::error_code& ec, uint32_t generation) {
+  if (!is_current_open(generation)) return;
   if (!ec) {
     this->init_socket();
     tcp_channel_t<socket_type::domain>::on_close = [this] {
@@ -175,12 +192,14 @@ inline void tcp_client_t<socket_type::domain>::async_connect_handler<socket_type
     };
     is_open = true;
     if (on_open) on_open();
+    if (!is_current_open(generation)) return;
     if (reconnect_timer_) {
       reconnect_timer_->cancel();
     }
     this->do_read_start();
   } else {
     if (on_open_failed) on_open_failed(ec);
+    if (!is_current_open(generation)) return;
     check_reconnect();
   }
 }
@@ -188,30 +207,36 @@ inline void tcp_client_t<socket_type::domain>::async_connect_handler<socket_type
 #ifdef ASIO_NET_ENABLE_SSL
 template <>
 template <>
-inline void tcp_client_t<socket_type::ssl>::async_connect_handler<socket_type::ssl>(const std::error_code& ec) {
+inline void tcp_client_t<socket_type::ssl>::async_connect_handler<socket_type::ssl>(const std::error_code& ec, uint32_t generation) {
+  if (!is_current_open(generation)) return;
   if (!ec) {
     this->init_socket();
-    socket_.async_handshake(asio::ssl::stream_base::client, [this, alive = std::weak_ptr<void>(this->is_alive_)](const std::error_code& error) {
-      if (alive.expired()) return;
-      if (!error) {
-        tcp_channel_t<socket_type::ssl>::on_close = [this] {
-          is_open = false;
-          if (tcp_client_t::on_close) tcp_client_t::on_close();
-          check_reconnect();
-        };
-        is_open = true;
-        if (on_open) on_open();
-        if (reconnect_timer_) {
-          reconnect_timer_->cancel();
-        }
-        this->do_read_start();
-      } else {
-        if (on_open_failed) on_open_failed(error);
-        check_reconnect();
-      }
-    });
+    socket_.async_handshake(asio::ssl::stream_base::client,
+                            [this, alive = std::weak_ptr<void>(this->is_alive_), generation](const std::error_code& error) {
+                              if (alive.expired()) return;
+                              if (!is_current_open(generation)) return;
+                              if (!error) {
+                                tcp_channel_t<socket_type::ssl>::on_close = [this] {
+                                  is_open = false;
+                                  if (tcp_client_t::on_close) tcp_client_t::on_close();
+                                  check_reconnect();
+                                };
+                                is_open = true;
+                                if (on_open) on_open();
+                                if (!is_current_open(generation)) return;
+                                if (reconnect_timer_) {
+                                  reconnect_timer_->cancel();
+                                }
+                                this->do_read_start();
+                              } else {
+                                if (on_open_failed) on_open_failed(error);
+                                if (!is_current_open(generation)) return;
+                                check_reconnect();
+                              }
+                            });
   } else {
     if (on_open_failed) on_open_failed(ec);
+    if (!is_current_open(generation)) return;
     check_reconnect();
   }
 }
