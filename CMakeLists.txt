@@ -1,10 +1,11 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.15)
 
 project(asio_net CXX)
 
 option(ASIO_NET_ENABLE_SSL "" OFF)
 option(ASIO_NET_BUILD_TEST "" OFF)
 option(ASIO_NET_DISABLE_ON_DATA_PRINT "" OFF)
+option(ASIO_NET_ENABLE_SANITIZE_ADDRESS "" OFF)
 
 if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     set(ASIO_NET_BUILD_TEST ON)
@@ -43,6 +44,15 @@ endif ()
 
 if (ASIO_NET_BUILD_TEST)
     message(STATUS "ASIO_PATH: $ENV{ASIO_PATH}")
+
+    if (ASIO_NET_ENABLE_SANITIZE_ADDRESS)
+        if (MSVC)
+            message(FATAL_ERROR "ASIO_NET_ENABLE_SANITIZE_ADDRESS is only supported with GCC/Clang")
+        endif ()
+        add_compile_options(-fsanitize=address)
+        link_libraries(-fsanitize=address)
+    endif ()
+
     add_definitions(-DASIO_NO_DEPRECATED)
     include_directories($ENV{ASIO_PATH})
     link_libraries(${PROJECT_NAME})

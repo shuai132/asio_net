@@ -11,7 +11,7 @@ on:
 jobs:
   build-and-test:
 
-    name: ${{ matrix.toolchain }}-${{ matrix.configuration }}
+    name: ${{ matrix.toolchain }}-${{ matrix.configuration }} sanitize_address:${{ matrix.sanitize_address }}
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -27,6 +27,10 @@ jobs:
         configuration:
           - Debug
           - Release
+
+        sanitize_address:
+          - OFF
+          - ON
 
         include:
           - toolchain: linux-gcc
@@ -54,6 +58,14 @@ jobs:
               BIN_SUFFIX: ".exe"
               CMAKE_OPTIONS: "-G \"MinGW Makefiles\""
 
+        exclude:
+          - toolchain: macos-clang
+            sanitize_address: ON
+          - toolchain: windows-msvc
+            sanitize_address: ON
+          - toolchain: windows-mingw
+            sanitize_address: ON
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -62,10 +74,10 @@ jobs:
       - name: Init ASIO
         run: git clone https://github.com/chriskohlhoff/asio.git -b asio-1-32-0 --depth=1
 
-      - name: Configure (${{ matrix.configuration }})
+      - name: Configure (${{ matrix.configuration }}) sanitize_address:${{ matrix.sanitize_address }}
         env:
           ASIO_PATH: asio/asio/include
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.configuration }} ${{ matrix.env.CMAKE_OPTIONS }} -DASIO_NET_DISABLE_ON_DATA_PRINT=ON
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.configuration }} ${{ matrix.env.CMAKE_OPTIONS }} -DASIO_NET_DISABLE_ON_DATA_PRINT=ON -DASIO_NET_ENABLE_SANITIZE_ADDRESS=${{ matrix.sanitize_address }}
 
       - name: Build with ${{ matrix.compiler }}
         run: cmake --build build --config ${{ matrix.configuration }} -j
